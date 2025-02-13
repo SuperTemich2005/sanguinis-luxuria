@@ -4,6 +4,7 @@ import com.auroali.sanguinisluxuria.client.BLHud;
 import com.auroali.sanguinisluxuria.client.particles.AltarBeatParticle;
 import com.auroali.sanguinisluxuria.client.particles.DrippingBloodParticle;
 import com.auroali.sanguinisluxuria.client.render.blocks.ItemDisplayingBlockEntityRenderer;
+import com.auroali.sanguinisluxuria.client.render.effects.VampireHungerEffectManager;
 import com.auroali.sanguinisluxuria.client.render.entities.VampireMerchantRenderer;
 import com.auroali.sanguinisluxuria.client.render.entities.VampireVillagerRenderer;
 import com.auroali.sanguinisluxuria.common.abilities.SyncableVampireAbility;
@@ -13,6 +14,7 @@ import com.auroali.sanguinisluxuria.common.network.*;
 import com.auroali.sanguinisluxuria.common.particles.DelayedParticleEffect;
 import com.auroali.sanguinisluxuria.common.registry.*;
 import dev.emi.trinkets.api.client.TrinketRendererRegistry;
+import ladysnake.satin.api.event.ShaderEffectRenderCallback;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -70,7 +72,7 @@ public class BloodlustClient implements ClientModInitializer {
     );
 
     public static boolean isAltarActive = false;
-
+    private final VampireHungerEffectManager vampireHungerEffectManager = new VampireHungerEffectManager();
     public boolean drainingBlood;
 
     @Override
@@ -182,6 +184,13 @@ public class BloodlustClient implements ClientModInitializer {
                 player.getWorld().addParticle(DustParticleEffect.DEFAULT, x, y, z, 0, 0, 0);
             }
         });
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player != null)
+                this.vampireHungerEffectManager.tick(client.player);
+        });
+
+        ShaderEffectRenderCallback.EVENT.register(this.vampireHungerEffectManager::render);
     }
 
     public void registerBindings() {

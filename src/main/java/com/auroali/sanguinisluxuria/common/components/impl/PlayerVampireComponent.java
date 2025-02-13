@@ -411,7 +411,7 @@ public class PlayerVampireComponent implements VampireComponent, EntityTrackingD
     }
 
     private void updateTarget() {
-        HitResult result = this.getTarget();
+        HitResult result = VampireHelper.raycastEntity(this.holder, this.holder.getRotationVector(), VampireHelper::hasBlood);
         if (!this.canDrainBlood() || result.getType() != HitResult.Type.ENTITY) {
             this.target = null;
             this.bloodDrainTimer = 0;
@@ -420,42 +420,13 @@ public class PlayerVampireComponent implements VampireComponent, EntityTrackingD
 
         LivingEntity entity = ((EntityHitResult) result).getEntity() instanceof LivingEntity living ? living : null;
 
-        if (!VampireHelper.hasBlood(entity)
-          || BLEntityComponents.BLOOD_COMPONENT.get(entity).isEmpty()
-        ) {
+        if (BLEntityComponents.BLOOD_COMPONENT.get(entity).isEmpty()) {
             this.target = null;
             this.bloodDrainTimer = 0;
             return;
         }
 
         this.target = entity;
-    }
-
-    private HitResult getTarget() {
-        double reachDistance = ReachEntityAttributes.getAttackRange(this.holder, 3.0);
-        Vec3d start = this.holder.getEyePos();
-        Vec3d end = start.add(this.holder.getRotationVector().multiply(reachDistance));
-
-        HitResult result = this.holder.getWorld().raycast(new RaycastContext(
-          start, end, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, this.holder
-        ));
-
-        Vec3d vec3d2 = this.holder.getRotationVec(1.0F);
-        Vec3d vec3d3 = start.add(vec3d2.x * reachDistance, vec3d2.y * reachDistance, vec3d2.z * reachDistance);
-
-        Box box = this.holder.getBoundingBox().stretch(vec3d2.multiply(reachDistance)).expand(1.0, 1.0, 1.0);
-
-        double d = reachDistance * reachDistance;
-        if (result != null)
-            d = result.getPos().squaredDistanceTo(start);
-        EntityHitResult entityHitResult = ProjectileUtil.raycast(this.holder, start, vec3d3, box, entity -> !entity.isSpectator() && entity.canHit(), d);
-        if (entityHitResult != null) {
-            double g = start.squaredDistanceTo(entityHitResult.getPos());
-            if (g < d || result == null) {
-                return entityHitResult;
-            }
-        }
-        return result;
     }
 
     private void requestSync(int flags) {

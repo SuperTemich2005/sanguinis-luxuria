@@ -7,6 +7,7 @@ import com.auroali.sanguinisluxuria.common.registry.BLParticles;
 import com.auroali.sanguinisluxuria.common.registry.BLStatusEffects;
 import com.auroali.sanguinisluxuria.common.registry.BLVampireAbilities;
 import com.jamieswhiteshirt.reachentityattributes.ReachEntityAttributes;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.projectile.ProjectileUtil;
@@ -23,7 +24,7 @@ public class BiteAbility extends VampireAbility implements EntitySyncableVampire
         if (component.getAbilties().isOnCooldown(this) || VampireHelper.isMasked(entity))
             return;
 
-        HitResult result = this.getTarget(entity);
+        HitResult result = VampireHelper.raycastEntity(entity, entity.getRotationVector(), Entity::isLiving);
         if (result.getType() != HitResult.Type.ENTITY)
             return;
 
@@ -39,33 +40,6 @@ public class BiteAbility extends VampireAbility implements EntitySyncableVampire
             VampireHelper.transferStatusEffects(entity, target);
         }
         component.getAbilties().setCooldown(this, 220);
-    }
-
-    private HitResult getTarget(LivingEntity entity) {
-        double reachDistance = ReachEntityAttributes.getAttackRange(entity, 3.0);
-        Vec3d start = entity.getEyePos();
-        Vec3d end = start.add(entity.getRotationVector().multiply(reachDistance));
-
-        HitResult result = entity.getWorld().raycast(new RaycastContext(
-          start, end, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, entity
-        ));
-
-        Vec3d vec3d2 = entity.getRotationVec(1.0F);
-        Vec3d vec3d3 = start.add(vec3d2.x * reachDistance, vec3d2.y * reachDistance, vec3d2.z * reachDistance);
-
-        Box box = entity.getBoundingBox().stretch(vec3d2.multiply(reachDistance)).expand(1.0, 1.0, 1.0);
-
-        double d = reachDistance * reachDistance;
-        if (result != null)
-            d = result.getPos().squaredDistanceTo(start);
-        EntityHitResult entityHitResult = ProjectileUtil.raycast(entity, start, vec3d3, box, e -> !e.isSpectator() && e.canHit(), d);
-        if (entityHitResult != null) {
-            double g = start.squaredDistanceTo(entityHitResult.getPos());
-            if (g < d || result == null) {
-                return entityHitResult;
-            }
-        }
-        return result;
     }
 
     @Override
