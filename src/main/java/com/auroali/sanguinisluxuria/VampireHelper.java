@@ -283,7 +283,7 @@ public class VampireHelper {
         if (result != null)
             targetDistance = result.getPos().squaredDistanceTo(start);
 
-        EntityHitResult entityHitResult = ProjectileUtil.raycast(entity, start, end, box, predicate, distance);
+        EntityHitResult entityHitResult = ProjectileUtil.raycast(entity, start, end, box, predicate, targetDistance);
         if (entityHitResult != null) {
             double entityDistance = start.squaredDistanceTo(entityHitResult.getPos());
             if (entityDistance < targetDistance || result == null) {
@@ -294,7 +294,7 @@ public class VampireHelper {
     }
 
     public static HitResult raycastEntity(LivingEntity entity, Vec3d direction, Predicate<Entity> predicate) {
-        double reach = ReachEntityAttributes.getReachDistance(entity, 3.0);
+        double reach = ReachEntityAttributes.getReachDistance(entity, 4.5d);
         return raycastEntity(entity, direction, predicate, reach);
     }
 }
