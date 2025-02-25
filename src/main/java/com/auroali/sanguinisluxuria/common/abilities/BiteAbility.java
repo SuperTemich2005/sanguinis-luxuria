@@ -6,17 +6,13 @@ import com.auroali.sanguinisluxuria.common.registry.BLDamageSources;
 import com.auroali.sanguinisluxuria.common.registry.BLParticles;
 import com.auroali.sanguinisluxuria.common.registry.BLStatusEffects;
 import com.auroali.sanguinisluxuria.common.registry.BLVampireAbilities;
-import com.jamieswhiteshirt.reachentityattributes.ReachEntityAttributes;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.projectile.ProjectileUtil;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
-import net.minecraft.world.RaycastContext;
 
 public class BiteAbility extends VampireAbility implements EntitySyncableVampireAbility<LivingEntity> {
     @Override
