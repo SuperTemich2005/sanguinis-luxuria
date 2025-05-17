@@ -396,33 +396,6 @@ public class PlayerVampireComponent implements VampireComponent, EntityTrackingD
         this.requestSync(SYNC_BLOOD_DRAIN);
     }
 
-    private HitResult getTarget() {
-        double reachDistance = ReachEntityAttributes.getAttackRange(this.holder, 3.0);
-        Vec3d start = this.holder.getEyePos();
-        Vec3d end = start.add(this.holder.getRotationVector().multiply(reachDistance));
-
-        HitResult result = this.holder.getWorld().raycast(new RaycastContext(
-          start, end, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, this.holder
-        ));
-
-        Vec3d vec3d2 = this.holder.getRotationVec(1.0F);
-        Vec3d vec3d3 = start.add(vec3d2.x * reachDistance, vec3d2.y * reachDistance, vec3d2.z * reachDistance);
-
-        Box box = this.holder.getBoundingBox().stretch(vec3d2.multiply(reachDistance)).expand(1.0, 1.0, 1.0);
-
-        double d = reachDistance * reachDistance;
-        if (result != null)
-            d = result.getPos().squaredDistanceTo(start);
-        EntityHitResult entityHitResult = ProjectileUtil.raycast(this.holder, start, vec3d3, box, entity -> !entity.isSpectator() && entity.canHit(), d);
-        if (entityHitResult != null) {
-            double g = start.squaredDistanceTo(entityHitResult.getPos());
-            if (g < d || result == null) {
-                return entityHitResult;
-            }
-        }
-        return result;
-    }
-
     // from MobEntity
     private boolean isAffectedByDaylight() {
         if (this.holder.getWorld().isDay() && !this.holder.getWorld().isClient) {

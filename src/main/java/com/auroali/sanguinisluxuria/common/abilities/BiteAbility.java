@@ -10,6 +10,7 @@ import com.auroali.sanguinisluxuria.common.registry.BLVampireAbilities;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
@@ -55,26 +56,5 @@ public class BiteAbility extends VampireAbility {
             drainer.setLastDrained(target);
         }
         component.getAbilties().setCooldown(this, 220);
-    }
-
-    @Override
-    public void handle(LivingEntity entity, LivingEntity data) {
-        Box box = data.getBoundingBox();
-        Random rand = data.getRandom();
-        int max = 15;
-        for (int i = 0; i < max; i++) {
-            double x = box.minX + rand.nextDouble() * box.getXLength();
-            double y = box.minY + rand.nextDouble() * box.getYLength();
-            double z = box.minZ + rand.nextDouble() * box.getZLength();
-            data.getWorld().addParticle(
-              BLParticles.FALLING_BLOOD,
-              x,
-              y,
-              z,
-              0,
-              0,
-              0
-            );
-        }
     }
 }
