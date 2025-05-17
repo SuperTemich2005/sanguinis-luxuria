@@ -1,6 +1,7 @@
 package com.auroali.sanguinisluxuria.datagen.builders;
 
-import com.auroali.sanguinisluxuria.common.blood.BloodDrainEffectInstance;
+import com.auroali.sanguinisluxuria.common.blood.BloodDrainEffect;
+import com.auroali.sanguinisluxuria.common.blood.effects.BloodDrainStatusEffect;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.mojang.datafixers.util.Either;
@@ -16,10 +17,10 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class BloodDrainEffectBuilder {
-    final Either<TagKey<EntityType<?>>, EntityType<?>> target;
-    final List<BloodDrainEffectInstance> effects;
+    final Either<TagKey<EntityType<?>>, Identifier> target;
+    final List<BloodDrainEffect> effects;
 
-    protected BloodDrainEffectBuilder(Either<TagKey<EntityType<?>>, EntityType<?>> target) {
+    protected BloodDrainEffectBuilder(Either<TagKey<EntityType<?>>, Identifier> target) {
         this.target = target;
         this.effects = new ArrayList<>();
     }
@@ -29,28 +30,43 @@ public class BloodDrainEffectBuilder {
     }
 
     public static BloodDrainEffectBuilder create(EntityType<?> entity) {
-        return new BloodDrainEffectBuilder(Either.right(entity));
+        return create(EntityType.getId(entity));
     }
 
-    public BloodDrainEffectBuilder effect(StatusEffect effect, int duration, int amplifier, float chance) {
-        this.effects.add(new BloodDrainEffectInstance(effect, duration, amplifier, chance));
+    public static BloodDrainEffectBuilder create(Identifier entityId) {
+        if (!Registries.ENTITY_TYPE.containsId(entityId))
+            throw new IllegalArgumentException(entityId + " is not present in the registry");
+        return new BloodDrainEffectBuilder(Either.right(entityId));
+    }
+
+    public static BloodDrainEffectBuilder createOptional(Identifier entityId) {
+        return new BloodDrainEffectBuilder(Either.right(entityId));
+    }
+
+    public BloodDrainEffectBuilder effect(BloodDrainEffect effect) {
+        this.effects.add(effect);
         return this;
     }
 
-    public BloodDrainEffectBuilder effect(StatusEffect effect, int duration) {
-        return this.effect(effect, duration, 0, 1.f);
+    public BloodDrainEffectBuilder statusEffect(StatusEffect effect, int duration, int amplifier, float chance) {
+        this.effects.add(new BloodDrainStatusEffect(effect, duration, amplifier, chance));
+        return this;
     }
 
-    public BloodDrainEffectBuilder effect(StatusEffect effect, float chance) {
-        return this.effect(effect, 300, 0, chance);
+    public BloodDrainEffectBuilder statusEffect(StatusEffect effect, int duration) {
+        return this.statusEffect(effect, duration, 0, 1.f);
     }
 
-    public BloodDrainEffectBuilder effect(StatusEffect effect, int duration, float chance) {
-        return this.effect(effect, duration, 0, chance);
+    public BloodDrainEffectBuilder statusEffect(StatusEffect effect, float chance) {
+        return this.statusEffect(effect, 300, 0, chance);
     }
 
-    public BloodDrainEffectBuilder effect(StatusEffect effect) {
-        return this.effect(effect, 300, 0, 1.f);
+    public BloodDrainEffectBuilder statusEffect(StatusEffect effect, int duration, float chance) {
+        return this.statusEffect(effect, duration, 0, chance);
+    }
+
+    public BloodDrainEffectBuilder statusEffect(StatusEffect effect) {
+        return this.statusEffect(effect, 300, 0, 1.f);
     }
 
     protected void validate() {
@@ -65,10 +81,10 @@ public class BloodDrainEffectBuilder {
 
     public static class Provider {
         final Identifier id;
-        final Either<TagKey<EntityType<?>>, EntityType<?>> target;
-        final List<BloodDrainEffectInstance> effects;
+        final Either<TagKey<EntityType<?>>, Identifier> target;
+        final List<BloodDrainEffect> effects;
 
-        protected Provider(Identifier id, Either<TagKey<EntityType<?>>, EntityType<?>> target, List<BloodDrainEffectInstance> effects) {
+        protected Provider(Identifier id, Either<TagKey<EntityType<?>>, Identifier> target, List<BloodDrainEffect> effects) {
             this.id = id;
             this.target = target;
             this.effects = effects;
@@ -77,9 +93,9 @@ public class BloodDrainEffectBuilder {
         public void serialize(JsonObject object) {
             this.target
               .ifLeft(key -> object.addProperty("entity", "#" + key.id().toString()))
-              .ifRight(entity -> object.addProperty("entity", Registries.ENTITY_TYPE.getId(entity).toString()));
+              .ifRight(entity -> object.addProperty("entity", entity.toString()));
 
-            BloodDrainEffectInstance.CODEC.listOf()
+            BloodDrainEffect.CODEC.listOf()
               .encodeStart(JsonOps.INSTANCE, this.effects)
               .resultOrPartial(str -> {
                   throw new JsonParseException(str);

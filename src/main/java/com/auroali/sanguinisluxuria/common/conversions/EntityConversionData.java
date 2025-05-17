@@ -1,5 +1,6 @@
 package com.auroali.sanguinisluxuria.common.conversions;
 
+import com.auroali.sanguinisluxuria.Bloodlust;
 import com.auroali.sanguinisluxuria.VampireHelper;
 import com.auroali.sanguinisluxuria.common.components.BLEntityComponents;
 import com.auroali.sanguinisluxuria.common.components.BloodComponent;
@@ -10,6 +11,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.nbt.NbtCompound;
@@ -20,6 +23,8 @@ import net.minecraft.world.World;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EntityConversionData {
     protected final ConversionType type;
@@ -78,7 +83,7 @@ public class EntityConversionData {
         VampireConversionEvents.AFTER_CONVERSION.invoker().afterConversion(context, newEntity);
     }
 
-    public static EntityConversionData fromJson(JsonObject object) {
+    public static EntityConversionData fromJson(JsonObject object, CachedParser<EntityConversionTransformer> transformerCache, CachedParser<EntityConversionCondition> conditionCache) {
         if (!object.has("type"))
             throw new JsonParseException("Missing type field");
         if (!object.has("entity"))
@@ -94,60 +99,61 @@ public class EntityConversionData {
         if (type == null)
             throw new JsonParseException("Could not get type " + object.get("type"));
 
-        EntityType<?> entity = Registries.ENTITY_TYPE.get(Identifier.tryParse(object.get("entity").getAsString()));
-        EntityType<?> target = Registries.ENTITY_TYPE.get(Identifier.tryParse(object.get("target").getAsString()));
+        Identifier entityId = Identifier.tryParse(object.get("entity").getAsString());
+        if (entityId == null)
+            throw new JsonParseException("Failed to parse id " + object.get("entity"));
+        if (!Registries.ENTITY_TYPE.containsId(entityId))
+            throw new JsonParseException(entityId + " is not a valid entity");
+
+        Identifier targetId = Identifier.tryParse(object.get("target").getAsString());
+        if (targetId == null)
+            throw new JsonParseException("Failed to parse id " + object.get("target"));
+        if (!Registries.ENTITY_TYPE.containsId(targetId))
+            throw new JsonParseException(targetId + " is not a valid entity");
+
+        EntityType<?> entity = Registries.ENTITY_TYPE.get(entityId);
+        EntityType<?> target = Registries.ENTITY_TYPE.get(targetId);
         // if the transformers field is present, parse it
         List<EntityConversionTransformer> transformers = object.has("transformers") && object.get("transformers").isJsonArray()
-          ? parseTransformers(object.getAsJsonArray("transformers"))
+          ? parseWithCache(object.getAsJsonArray("transformers"), transformerCache)
           : Collections.emptyList();
 
         // if the conditions field is present, parse it
         List<EntityConversionCondition> conditions = object.has("conditions") && object.get("conditions").isJsonArray()
-          ? parseConditions(object.getAsJsonArray("conditions"))
+          ? parseWithCache(object.getAsJsonArray("conditions"), conditionCache)
           : Collections.emptyList();
 
         return new EntityConversionData(type, entity, target, transformers, conditions);
     }
 
-    public static List<EntityConversionCondition> parseConditions(JsonArray json) {
-        List<EntityConversionCondition> conditions = new ArrayList<>(json.size());
-        for (JsonElement element : json) {
-            JsonObject conditionJson = element.getAsJsonObject();
-            if (!conditionJson.has("type"))
-                throw new JsonParseException("Condition missing type field");
-
-            Identifier id = Identifier.tryParse(conditionJson.get("type").getAsString());
-            if (id == null)
-                throw new JsonParseException("Cannot parse id " + conditionJson.get("type"));
-
-            EntityConversionCondition.Serializer<?> serializer = BLRegistries.CONVERSION_CONDITIONS.get(id);
-            if (serializer == null)
-                throw new JsonParseException("Failed to read condition type " + id);
-
-            EntityConversionCondition condition = serializer.fromJson(conditionJson);
-            conditions.add(condition);
+    private static <T> List<T> parseWithCache(JsonArray array, CachedParser<T> cache) {
+        List<T> result = new ArrayList<>(array.size());
+        for (JsonElement element : array) {
+            cache.parse(element).ifPresent(result::add);
         }
-        return conditions;
+        return result;
     }
 
-    public static List<EntityConversionTransformer> parseTransformers(JsonArray json) {
-        List<EntityConversionTransformer> transformers = new ArrayList<>(json.size());
-        for (JsonElement element : json) {
-            JsonObject transformerJson = element.getAsJsonObject();
-            if (!transformerJson.has("type"))
-                throw new JsonParseException("Transformer missing type field");
+    public static <T> CachedParser<T> makeCachedParser(Codec<T> codec) {
+        return new CachedParser<>(codec);
+    }
 
-            Identifier id = Identifier.tryParse(transformerJson.get("type").getAsString());
-            if (id == null)
-                throw new JsonParseException("Cannot parse id " + transformerJson.get("type"));
+    public static class CachedParser<T> {
+        private final Codec<T> codec;
+        private final ConcurrentHashMap<T, T> cache;
 
-            EntityConversionTransformer.Serializer<?> serializer = BLRegistries.CONVERSION_TRANSFORMERS.get(id);
-            if (serializer == null)
-                throw new JsonParseException("Failed to read transformer type " + id);
-
-            EntityConversionTransformer transformer = serializer.fromJson(transformerJson);
-            transformers.add(transformer);
+        protected CachedParser(Codec<T> codec) {
+            this.codec = codec;
+            this.cache = new ConcurrentHashMap<>();
         }
-        return transformers;
+
+        public Optional<T> parse(JsonElement element) {
+            return this.codec.parse(JsonOps.INSTANCE, element)
+              .resultOrPartial(Bloodlust.LOGGER::error)
+              .map(result -> this.cache.containsKey(result)
+                ? this.cache.get(result)
+                : this.cache.put(result, result)
+              );
+        }
     }
 }

@@ -1,0 +1,13 @@
+{
+  "type": "sanguinisluxuria:spawn",
+  "conditions": [
+    {
+      "type": "sanguinisluxuria:context",
+      "value": {
+        "conversion": "deconverting"
+      }
+    }
+  ],
+  "entity": "minecraft:zoglin",
+  "target": "minecraft:hoglin"
+}

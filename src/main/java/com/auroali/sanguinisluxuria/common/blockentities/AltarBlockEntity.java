@@ -4,11 +4,8 @@ import com.auroali.sanguinisluxuria.BloodlustClient;
 import com.auroali.sanguinisluxuria.VampireHelper;
 import com.auroali.sanguinisluxuria.common.blocks.AltarBlock;
 import com.auroali.sanguinisluxuria.common.network.AltarRecipeStartS2C;
-import com.auroali.sanguinisluxuria.common.network.SpawnAltarBeatParticleS2C;
-import com.auroali.sanguinisluxuria.common.registry.BLAdvancementCriterion;
-import com.auroali.sanguinisluxuria.common.registry.BLBlockEntities;
-import com.auroali.sanguinisluxuria.common.registry.BLRecipeTypes;
-import com.auroali.sanguinisluxuria.common.registry.BLSounds;
+import com.auroali.sanguinisluxuria.common.particles.DelayedParticleEffect;
+import com.auroali.sanguinisluxuria.common.registry.*;
 import com.auroali.sanguinisluxuria.common.rituals.ActiveRitualData;
 import com.auroali.sanguinisluxuria.common.rituals.Ritual;
 import com.auroali.sanguinisluxuria.common.rituals.RitualParameters;
@@ -17,6 +14,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventories;
@@ -28,6 +26,7 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
@@ -40,14 +39,16 @@ import java.util.List;
 import java.util.Optional;
 
 public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisplayingBlockEntity {
+    private static final Vec3d ITEM_OFFSET = new Vec3d(0.5, 0.45, 0.5);
     public static final int INVENTORY_SIZE = 1;
     public static final int PEDESTAL_SEARCH_RADIUS = 8;
-    DefaultedList<ItemStack> inventory = DefaultedList.ofSize(INVENTORY_SIZE, ItemStack.EMPTY);
-    int ticks;
-    LivingEntity cachedInitiator;
-    LivingEntity cachedTarget;
-    ActiveRitualData ritualData;
-    int ticksProcessing;
+
+    private DefaultedList<ItemStack> inventory = DefaultedList.ofSize(INVENTORY_SIZE, ItemStack.EMPTY);
+    protected int ticks;
+    private LivingEntity cachedInitiator;
+    private LivingEntity cachedTarget;
+    private ActiveRitualData ritualData;
+    private int ticksProcessing;
 
     public AltarBlockEntity(BlockPos pos, BlockState state) {
         super(BLBlockEntities.ALTAR, pos, state);
@@ -72,10 +73,8 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
 
     public static void tickClient(World world, BlockPos pos, BlockState state, AltarBlockEntity altar) {
         altar.ticks++;
-        if (!state.get(AltarBlock.ACTIVE))
-            return;
-
-        BloodlustClient.isAltarActive = true;
+        if (state.get(AltarBlock.ACTIVE))
+            BloodlustClient.isAltarActive = true;
     }
 
     public static void tick(World world, BlockPos pos, BlockState state, AltarBlockEntity altar) {
@@ -91,11 +90,19 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
             return;
         }
 
-        if (world.getTime() % 20 == 0) {
+        if (world.getTime() % 20 == 0 && altar.getWorld() instanceof ServerWorld serverWorld) {
             world.playSound(null, pos, BLSounds.ALTAR_BEATS, SoundCategory.BLOCKS);
-            SpawnAltarBeatParticleS2C packet = new SpawnAltarBeatParticleS2C(altar.pos);
-            PlayerLookup.tracking(altar)
-              .forEach(player -> ServerPlayNetworking.send(player, packet));
+            serverWorld.spawnParticles(
+              new DelayedParticleEffect(BLParticles.ALTAR_BEAT, 2),
+              altar.getPos().getX() + 0.5,
+              altar.getPos().getY() + 0.05,
+              altar.getPos().getZ() + 0.5,
+              0,
+              0,
+              0,
+              0,
+              0
+            );
         }
 
         if (altar.ticksProcessing < 300) {
@@ -159,8 +166,20 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
                   PedestalBlockEntity entity = ((PedestalBlockEntity) world.getBlockEntity(position));
                   if (entity == null)
                       return;
-                  entity.getItem().decrement(1);
-                  entity.inv.markDirty();
+                  // spawn the item remainder, if there are any
+                  ItemStack stack = entity.getItem().split(1);
+                  ItemStack remainder = stack.getRecipeRemainder();
+                  if (!remainder.isEmpty()) {
+                      ItemEntity itemEntity = new ItemEntity(
+                        world,
+                        position.getX() + 0.5,
+                        position.getY() + 1.0,
+                        position.getZ() + 0.5,
+                        remainder
+                      );
+                      world.spawnEntity(itemEntity);
+                  }
+                  entity.getInventory().markDirty();
               });
 
               world.setBlockState(pos, state.with(AltarBlock.ACTIVE, true));
@@ -281,6 +300,6 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
 
     @Override
     public Vec3d getDisplayOffset() {
-        return new Vec3d(0.5, 0.45, 0.5);
+        return ITEM_OFFSET;
     }
 }

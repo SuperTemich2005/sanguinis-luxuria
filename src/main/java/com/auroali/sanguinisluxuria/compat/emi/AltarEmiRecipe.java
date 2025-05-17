@@ -3,9 +3,9 @@ package com.auroali.sanguinisluxuria.compat.emi;
 import com.auroali.sanguinisluxuria.common.blocks.AltarBlock;
 import com.auroali.sanguinisluxuria.common.recipes.AltarRitualRecipe;
 import com.auroali.sanguinisluxuria.common.registry.BLBlocks;
-import com.auroali.sanguinisluxuria.common.registry.BLRegistries;
 import com.auroali.sanguinisluxuria.common.rituals.ItemCreatingRitual;
 import com.auroali.sanguinisluxuria.common.rituals.Ritual;
+import com.auroali.sanguinisluxuria.common.rituals.RitualType;
 import com.google.common.collect.Lists;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
@@ -19,6 +19,7 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -50,7 +51,21 @@ public class AltarEmiRecipe implements EmiRecipe {
         this.output = this.ritual instanceof ItemCreatingRitual itemRitual
           ? EmiStack.of(itemRitual.getOutput())
           : EmiStack.EMPTY;
-        this.ritualTranslationKey = Util.createTranslationKey("altar_ritual", BLRegistries.RITUAL_TYPES.getId(this.ritual.getType()));
+        this.ritualTranslationKey = Util.createTranslationKey("altar_ritual", RitualType.getId(this.ritual.getType()));
+        this.calculateRemainders();
+    }
+
+    private void calculateRemainders() {
+        for (EmiIngredient ingredient : this.inputs) {
+            for (EmiStack stack : ingredient.getEmiStacks()) {
+                if (stack.isEmpty())
+                    continue;
+
+                ItemStack recipeRemainder = stack.getItemStack().getRecipeRemainder();
+                if (!recipeRemainder.isEmpty())
+                    stack.setRemainder(EmiStack.of(recipeRemainder));
+            }
+        }
     }
 
     @Override
@@ -108,6 +123,7 @@ public class AltarEmiRecipe implements EmiRecipe {
             stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(45));
             blockRenderer.renderBlockAsEntity(state, stack, drawContext.getVertexConsumers(), LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
             stack.pop();
+            drawContext.draw();
         });
         widgets.addFillingArrow(84, 40, 15000)
           .tooltip(List.of(TooltipComponent.of(Text.translatable("emi.cooking.time", 15).asOrderedText())));

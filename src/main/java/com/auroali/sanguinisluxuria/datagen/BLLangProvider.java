@@ -3,7 +3,6 @@ package com.auroali.sanguinisluxuria.datagen;
 import com.auroali.sanguinisluxuria.BLResources;
 import com.auroali.sanguinisluxuria.common.abilities.VampireAbility;
 import com.auroali.sanguinisluxuria.common.registry.*;
-import com.auroali.sanguinisluxuria.common.rituals.RitualType;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
 import net.minecraft.enchantment.Enchantment;
@@ -16,7 +15,6 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionUtil;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.Util;
 
 import java.util.function.BiConsumer;
 
@@ -30,6 +28,7 @@ public class BLLangProvider extends FabricLanguageProvider {
         translationBuilder.add(BLItemGroups.SANGUINIS_LUXURIA_TAB, "Sanguinis Luxuria");
         translationBuilder.add("fluids.sanguinisluxuria.blood", "Blood");
         translationBuilder.add("argument.sanguinisluxuria.id.invalid", "'%s' is not a valid id!");
+        translationBuilder.add("commands.sanguinisluxuria.convert.invalid_conversion", "Invalid conversion type \"%s\"");
         tags(translationBuilder);
         subtitles(translationBuilder);
         keybindings(translationBuilder);
@@ -55,7 +54,7 @@ public class BLLangProvider extends FabricLanguageProvider {
     }
 
     private static void emiTranslations(TranslationBuilder builder) {
-        builder.add("emi.category.sanguinisluxuria.altar", "Altar");
+        builder.add("emi.category.sanguinisluxuria.ritual", "Rituals");
         builder.add("emi.category.sanguinisluxuria.blood_cauldron", "Cauldron Infusing");
     }
 
@@ -95,19 +94,16 @@ public class BLLangProvider extends FabricLanguageProvider {
     }
 
     public static void rituals(TranslationBuilder builder) {
-        generateRitualKey(builder, BLRitualTypes.ABILITY_RITUAL_TYPE, "Ritual of Transformation");
-        generateRitualKey(builder, BLRitualTypes.ABILITY_RESET_RITUAL_TYPE, "Ritual of Cleansing");
-        generateRitualKey(builder, BLRitualTypes.ITEM_RITUAL_TYPE, "Ritual of Transmutation");
-        generateRitualKey(builder, BLRitualTypes.ABILITY_REVEAL_RITUAL_TYPE, "Ritual of Revealing");
-        generateRitualKey(builder, BLRitualTypes.ENTITY_SPAWNING_RITUAL_TYPE, "Ritual of Summoning");
-        generateRitualKey(builder, BLRitualTypes.STATUS_EFFECT_RITUAL_TYPE, "Ritual of Alchemy");
-        generateRitualKey(builder, BLRitualTypes.CONVERT_ENTITY_RITUAL, "Ritual of Conversion");
+        builder.add(BLRitualTypes.ABILITY_RITUAL_TYPE.getTranslationKey(), "Ritual of Transformation");
+        builder.add(BLRitualTypes.ABILITY_RESET_RITUAL_TYPE.getTranslationKey(), "Ritual of Cleansing");
+        builder.add(BLRitualTypes.ITEM_RITUAL_TYPE.getTranslationKey(), "Ritual of Transmutation");
+        builder.add(BLRitualTypes.ABILITY_REVEAL_RITUAL_TYPE.getTranslationKey(), "Ritual of Revealing");
+        builder.add(BLRitualTypes.ENTITY_SPAWNING_RITUAL_TYPE.getTranslationKey(), "Ritual of Summoning");
+        builder.add(BLRitualTypes.STATUS_EFFECT_RITUAL_TYPE.getTranslationKey(), "Ritual of Alchemy");
+        builder.add(BLRitualTypes.CONVERT_ENTITY_RITUAL.getTranslationKey(), "Ritual of Conversion");
         builder.add("altar_ritual.sanguinisluxuria.convert.converting", "Converting");
         builder.add("altar_ritual.sanguinisluxuria.convert.deconverting", "Deconverting");
-    }
-
-    private static void generateRitualKey(TranslationBuilder builder, RitualType<?> type, String entry) {
-        builder.add(Util.createTranslationKey("altar_ritual", BLRegistries.RITUAL_TYPES.getId(type)), entry);
+        builder.add("altar_ritual.sanguinisluxuria.effects", "Applies the effects to %s for %.1ds");
     }
 
     private static void potions(TranslationBuilder translationBuilder) {
@@ -217,6 +213,7 @@ public class BLLangProvider extends FabricLanguageProvider {
         translationBuilder.add(BLBlocks.DECAYED_HANGING_SIGN, "Decayed Hanging Sign");
         translationBuilder.add(BLBlocks.DECAYED_STAIRS, "Decayed Stairs");
         translationBuilder.add(BLBlocks.POTTED_GRAFTED_SAPLING, "Potted Grafted Sapling");
+        translationBuilder.add("block.sanguinisluxuria.bed.no_sleep", "You can sleep only at day or during thunderstorms");
     }
 
     private static void items(TranslationBuilder translationBuilder) {
@@ -265,7 +262,7 @@ public class BLLangProvider extends FabricLanguageProvider {
         translationBuilder.add(BLAdvancementsProvider.desc("blood_sickness"), "Get blood sickness from drinking blood");
 
         translationBuilder.add(BLAdvancementsProvider.title("unlock_ability"), "Abilities");
-        translationBuilder.add(BLAdvancementsProvider.desc("unlock_ability"), "Allocate a skill point to an ability");
+        translationBuilder.add(BLAdvancementsProvider.desc("unlock_ability"), "Perform the Ritual of Transformation");
 
         translationBuilder.add(BLAdvancementsProvider.title("reset_abilities"), "Clean Slate");
         translationBuilder.add(BLAdvancementsProvider.desc("reset_abilities"), "Convert unlocked abilities back into skill points using blessed blood");
@@ -290,6 +287,9 @@ public class BLLangProvider extends FabricLanguageProvider {
 
         translationBuilder.add(BLAdvancementsProvider.title("obtain_hungry_decayed_log"), "Blood Collector");
         translationBuilder.add(BLAdvancementsProvider.desc("obtain_hungry_decayed_log"), "Obtain a Hungry Decayed Log");
+
+        translationBuilder.add(BLAdvancementsProvider.title("transfer_all_effects"), "How did we get there?");
+        translationBuilder.add(BLAdvancementsProvider.desc("transfer_all_effects"), "Transfer every effect at once via Infectious");
     }
 
     public static void generatePotionKey(TranslationBuilder builder, Potion potion, Item item, String entry) {

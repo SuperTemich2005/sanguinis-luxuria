@@ -5,7 +5,6 @@ import com.auroali.sanguinisluxuria.VampireHelper;
 import com.auroali.sanguinisluxuria.common.blood.BloodConstants;
 import com.auroali.sanguinisluxuria.common.components.BLEntityComponents;
 import com.auroali.sanguinisluxuria.common.components.InitializableBloodComponent;
-import com.auroali.sanguinisluxuria.common.components.VampireComponent;
 import com.auroali.sanguinisluxuria.common.registry.BLDamageSources;
 import com.auroali.sanguinisluxuria.common.registry.BLTags;
 import dev.onyxstudios.cca.api.v3.component.tick.ServerTickingComponent;
@@ -85,23 +84,6 @@ public class EntityBloodComponent implements InitializableBloodComponent, Server
     }
 
     @Override
-    public int addBlood(int amount) {
-        // ultrakill??????
-        int newBlood = Math.min(this.maxBlood, amount + this.currentBlood);
-        int bloodAdded = newBlood - this.currentBlood;
-        this.currentBlood = newBlood;
-        BLEntityComponents.BLOOD_COMPONENT.sync(this.holder);
-        if (VampireHelper.isVampire(this.holder) && bloodAdded > 0) {
-            VampireComponent vampire = BLEntityComponents.VAMPIRE_COMPONENT.get(this.holder);
-            vampire.setDowned(false);
-        }
-        this.bloodGainTimer = 0;
-        if (this.currentBlood == 0)
-            this.killHolderFromBloodloss(null);
-        return bloodAdded;
-    }
-
-    @Override
     public void setBlood(int amount) {
         this.currentBlood = amount;
         this.bloodGainTimer = 0;
@@ -115,37 +97,14 @@ public class EntityBloodComponent implements InitializableBloodComponent, Server
         if (this.isEmpty())
             return false;
 
-        if (this.currentBlood < amount)
+        if (this.getBlood() < amount)
             return false;
 
-        this.bloodGainTimer = 0;
-        this.currentBlood -= amount;
-
-        BLEntityComponents.BLOOD_COMPONENT.sync(this.holder);
-        if (this.currentBlood == 0)
+        if (this.getBlood() - amount <= 0)
             this.killHolderFromBloodloss(drainer);
 
+        this.setBlood(this.getBlood() - amount);
         return true;
-    }
-
-    @Override
-    public boolean drainBlood(int amount) {
-        return this.drainBlood(amount, null);
-    }
-
-    @Override
-    public boolean drainBlood(LivingEntity drainer) {
-        return this.drainBlood(1, drainer);
-    }
-
-    @Override
-    public boolean drainBlood() {
-        return this.drainBlood(1, null);
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return this.getMaxBlood() <= 0 || this.getBlood() <= 0;
     }
 
     public void killHolderFromBloodloss(LivingEntity drainer) {

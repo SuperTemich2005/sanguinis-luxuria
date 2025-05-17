@@ -14,10 +14,13 @@ import com.auroali.sanguinisluxuria.datagen.builders.BloodCauldronRecipeJsonBuil
 import com.auroali.sanguinisluxuria.datagen.builders.RitualRecipeJsonBuilder;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
+import net.fabricmc.fabric.api.tag.convention.v1.ConventionalItemTags;
 import net.minecraft.data.server.recipe.*;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.potion.PotionUtil;
+import net.minecraft.potion.Potions;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.book.RecipeCategory;
 import net.minecraft.registry.tag.ItemTags;
@@ -83,17 +86,17 @@ public class BLRecipeProvider extends FabricRecipeProvider {
           .pattern("lbl")
           .pattern("sss")
           .input('b', BLItems.BLOOD_BOTTLE)
-          .input('s', Items.BLACKSTONE)
+          .input('s', BLItems.DECAYED_PLANKS)
           .input('l', BLTags.Items.DECAYED_LOGS)
           .criterion("is_vampire", ConvertCriterion.Conditions.create(ConversionContext.Conversion.CONVERTING))
           .criterion("has_blackstone", conditionsFromItem(Items.BLACKSTONE))
           .offerTo(exporter);
         ShapedRecipeJsonBuilder.create(RecipeCategory.BUILDING_BLOCKS, BLItems.PEDESTAL)
-          .pattern(" l ")
-          .pattern(" s ")
-          .input('s', Items.BLACKSTONE_WALL)
-          .input('l', BLTags.Items.DECAYED_LOGS)
-          .criterion("has_blackstone", conditionsFromItem(Items.BLACKSTONE))
+          .pattern("l")
+          .pattern("l")
+          .pattern("l")
+          .input('l', BLItems.DECAYED_PLANKS)
+          .criterion("has_decayed_plans", conditionsFromItem(BLItems.DECAYED_PLANKS))
           .offerTo(exporter);
         ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, BLItems.SILVER_SWORD)
           .pattern("I")
@@ -151,6 +154,12 @@ public class BLRecipeProvider extends FabricRecipeProvider {
           .input(BLItems.RAW_SILVER, 9)
           .criterion("has_silver", conditionsFromItem(BLItems.RAW_SILVER))
           .offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(RecipeCategory.DECORATIONS, BLItems.SILVER_BARS)
+          .pattern("###")
+          .pattern("###")
+          .input('#', BLTags.Items.SILVER_INGOTS)
+          .criterion("has_silver", conditionsFromTag(BLTags.Items.SILVER_INGOTS))
+          .offerTo(exporter);
     }
 
     public void generateCauldronInfusingRecipes(Consumer<RecipeJsonProvider> exporter) {
@@ -163,23 +172,26 @@ public class BLRecipeProvider extends FabricRecipeProvider {
         BloodCauldronFillRecipeJsonBuilder.create(RecipeCategory.BREWING, BLItems.BLOOD_BAG)
           .criterion("has_item", conditionsFromItem(BLItems.BLOOD_BAG))
           .offerTo(exporter);
+        BloodCauldronRecipeJsonBuilder.create(RecipeCategory.BREWING, Ingredient.ofItems(Items.GUNPOWDER), Items.REDSTONE)
+          .criterion(hasItem(Items.GUNPOWDER), conditionsFromItem(Items.GUNPOWDER))
+          .offerTo(exporter);
     }
 
     public void generateRitualRecipes(Consumer<RecipeJsonProvider> exporter) {
-        RitualRecipeJsonBuilder.create(RecipeCategory.BREWING, new ItemRitual(BLItems.TWISTED_BLOOD))
+        RitualRecipeJsonBuilder.create(RecipeCategory.BREWING, ItemRitual.create(BLItems.TWISTED_BLOOD))
           .catalyst(BLItems.BLOOD_BOTTLE)
           .input(Items.NETHER_WART)
           .input(Items.FERMENTED_SPIDER_EYE)
           .input(BLItems.BLOOD_PETAL)
           .criterion("is_vampire", ConvertCriterion.Conditions.create(ConversionContext.Conversion.CONVERTING))
           .offerTo(exporter);
-        RitualRecipeJsonBuilder.create(RecipeCategory.TOOLS, new ItemRitual(BLItems.BLOOD_BAG))
+        RitualRecipeJsonBuilder.create(RecipeCategory.TOOLS, ItemRitual.create(BLItems.BLOOD_BAG))
           .catalyst(Items.GLASS_BOTTLE)
           .input(Items.GLASS)
           .input(Items.GLASS)
           .criterion("has_twisted_blood", conditionsFromItem(BLItems.TWISTED_BLOOD))
           .offerTo(exporter);
-        RitualRecipeJsonBuilder.create(RecipeCategory.TOOLS, new ItemRitual(BLItems.PENDANT_OF_PIERCING))
+        RitualRecipeJsonBuilder.create(RecipeCategory.TOOLS, ItemRitual.create(BLItems.PENDANT_OF_PIERCING))
           .catalyst(Items.ARROW)
           .input(BLItems.TWISTED_BLOOD)
           .input(Items.GOLD_INGOT)
@@ -251,5 +263,34 @@ public class BLRecipeProvider extends FabricRecipeProvider {
           .input(BLItems.SILVER_INGOT)
           .criterion("became_vampire", ConvertCriterion.Conditions.create(ConversionContext.Conversion.CONVERTING))
           .offerTo(exporter, BLResources.id("rituals/deconversion"));
+
+        // effects
+        RitualRecipeJsonBuilder.create(RecipeCategory.MISC, StatusEffectRitual.builder().addEffect(StatusEffects.FIRE_RESISTANCE).duration(1900).build())
+          .catalyst(PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.WATER))
+          .input(Items.MAGMA_CREAM)
+          .input(Items.MAGMA_CREAM)
+          .criterion(hasItem(Items.MAGMA_CREAM), conditionsFromItem(Items.MAGMA_CREAM))
+          .criterion("became_vampire", ConvertCriterion.Conditions.create(ConversionContext.Conversion.CONVERTING))
+          .offerTo(exporter, BLResources.id("rituals/lesser_fire_resistance"));
+
+        RitualRecipeJsonBuilder.create(RecipeCategory.MISC, StatusEffectRitual.builder().addEffect(StatusEffects.FIRE_RESISTANCE).target(StatusEffectRitual.Target.ALL).duration(3600).build())
+          .catalyst(BLItems.TWISTED_BLOOD)
+          .input(Items.MAGMA_CREAM)
+          .input(Items.NETHER_WART)
+          .input(Items.MAGMA_CREAM)
+          .input(Items.NETHER_WART)
+          .criterion(hasItem(BLItems.TWISTED_BLOOD), conditionsFromItem(BLItems.TWISTED_BLOOD))
+          .criterion(hasItem(Items.MAGMA_CREAM), conditionsFromItem(Items.MAGMA_CREAM))
+          .criterion("became_vampire", ConvertCriterion.Conditions.create(ConversionContext.Conversion.CONVERTING))
+          .offerTo(exporter, BLResources.id("rituals/greater_fire_resistance"));
+
+        RitualRecipeJsonBuilder.create(RecipeCategory.MISC, StatusEffectRitual.builder().addEffect(StatusEffects.RESISTANCE).duration(1200).build())
+          .catalyst(PotionUtil.setPotion(new ItemStack(Items.POTION), Potions.WATER))
+          .input(Items.IRON_CHESTPLATE)
+          .input(ConventionalItemTags.IRON_INGOTS)
+          .input(ConventionalItemTags.IRON_INGOTS)
+          .criterion(hasItem(Items.IRON_CHESTPLATE), conditionsFromItem(Items.IRON_CHESTPLATE))
+          .criterion("became_vampire", ConvertCriterion.Conditions.create(ConversionContext.Conversion.CONVERTING))
+          .offerTo(exporter, BLResources.id("rituals/lesser_resistance"));
     }
 }

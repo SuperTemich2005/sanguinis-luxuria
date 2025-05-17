@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_blackstone": {
+    "has_decayed_plans": {
       "conditions": {
         "items": [
           {
             "items": [
-              "minecraft:blackstone"
+              "sanguinisluxuria:decayed_planks"
             ]
           }
         ]
@@ -22,7 +22,7 @@
   },
   "requirements": [
     [
-      "has_blackstone",
+      "has_decayed_plans",
       "has_the_recipe"
     ]
   ],

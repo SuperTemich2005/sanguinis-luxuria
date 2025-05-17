@@ -10,8 +10,9 @@ import com.auroali.sanguinisluxuria.client.render.entities.VampireVillagerRender
 import com.auroali.sanguinisluxuria.common.abilities.SyncableVampireAbility;
 import com.auroali.sanguinisluxuria.common.abilities.VampireAbility;
 import com.auroali.sanguinisluxuria.common.items.BloodStorageItem;
-import com.auroali.sanguinisluxuria.common.network.*;
-import com.auroali.sanguinisluxuria.common.particles.DelayedParticleEffect;
+import com.auroali.sanguinisluxuria.common.network.ActivateAbilityC2S;
+import com.auroali.sanguinisluxuria.common.network.AltarRecipeStartS2C;
+import com.auroali.sanguinisluxuria.common.network.DrainBloodC2S;
 import com.auroali.sanguinisluxuria.common.registry.*;
 import dev.emi.trinkets.api.client.TrinketRendererRegistry;
 import ladysnake.satin.api.event.ShaderEffectRenderCallback;
@@ -32,16 +33,13 @@ import net.minecraft.client.particle.SpriteBillboardParticle;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import org.lwjgl.glfw.GLFW;
 
@@ -102,6 +100,7 @@ public class BloodlustClient implements ClientModInitializer {
         BlockRenderLayerMap.INSTANCE.putBlock(BLBlocks.DECAYED_TRAPDOOR, RenderLayer.getCutout());
         BlockRenderLayerMap.INSTANCE.putBlock(BLBlocks.DECAYED_DOOR, RenderLayer.getCutout());
         BlockRenderLayerMap.INSTANCE.putBlock(BLBlocks.POTTED_GRAFTED_SAPLING, RenderLayer.getCutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(BLBlocks.SILVER_BARS, RenderLayer.getCutout());
 
         EntityRendererRegistry.register(BLEntities.VAMPIRE_VILLAGER, VampireVillagerRenderer::new);
         EntityRendererRegistry.register(BLEntities.VAMPIRE_MERCHANT, VampireMerchantRenderer::new);
@@ -162,26 +161,6 @@ public class BloodlustClient implements ClientModInitializer {
                       0
                     );
                 }
-            }
-        });
-
-        ClientPlayNetworking.registerGlobalReceiver(SpawnAltarBeatParticleS2C.ID, (packet, player, responseSender) -> {
-            BlockPos pos = packet.pos();
-            player.getWorld().addParticle(new DelayedParticleEffect(BLParticles.ALTAR_BEAT, 2), pos.getX() + 0.5, pos.getY() + 0.05f, pos.getZ() + 0.5, 0, 0, 0);
-        });
-
-        ClientPlayNetworking.registerGlobalReceiver(HungryDecayedLogVFXS2C.ID, (packet, player, responseSender) -> {
-            Entity entity = player.getWorld().getEntityById(packet.entityId());
-            if (entity == null || entity.getBoundingBox() == null)
-                return;
-
-            Box boundingBox = entity.getBoundingBox();
-            Random random = player.getRandom();
-            for (int i = 0; i < 15; i++) {
-                double x = boundingBox.minX + boundingBox.getXLength() * random.nextDouble();
-                double y = boundingBox.minY + boundingBox.getYLength() * random.nextDouble();
-                double z = boundingBox.minZ + boundingBox.getZLength() * random.nextDouble();
-                player.getWorld().addParticle(DustParticleEffect.DEFAULT, x, y, z, 0, 0, 0);
             }
         });
 

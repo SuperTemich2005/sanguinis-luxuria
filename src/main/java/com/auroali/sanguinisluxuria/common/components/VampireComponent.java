@@ -43,7 +43,7 @@ public interface VampireComponent extends Component, AutoSyncedComponent, Server
      * or damaging them if the target has blood protection
      *
      * @param entity the entity to drain from
-     * @see BloodComponent#drainBlood(LivingEntity)
+     * @see BloodComponent#drainBlood(int, LivingEntity)
      */
     void drainBloodFrom(LivingEntity entity);
 
@@ -151,7 +151,7 @@ public interface VampireComponent extends Component, AutoSyncedComponent, Server
     static void handleBloodDrain(VampireComponent vampire, LivingEntity target, LivingEntity vampireEntity) {
         BloodComponent blood = BLEntityComponents.BLOOD_COMPONENT.get(target);
         // if the target doesn't have blood or cannot be drained, we can't fill hunger
-        if (!VampireHelper.hasBlood(target) || !BloodEvents.ALLOW_BLOOD_DRAIN.invoker().allowBloodDrain(vampireEntity, target) || !blood.drainBlood(vampireEntity))
+        if (!VampireHelper.hasBlood(target) || !BloodEvents.ALLOW_BLOOD_DRAIN.invoker().allowBloodDrain(vampireEntity, target) || !blood.drainBlood(1, vampireEntity))
             return;
 
         // damage the vampire and cancel filling up hunger if the target has blood protection
@@ -165,7 +165,7 @@ public interface VampireComponent extends Component, AutoSyncedComponent, Server
         // handle differences between adding blood to the player and regular entities
         // (such as saturation)
         if (vampireEntity instanceof PlayerEntity player)
-            ((VampireHungerManager) player.getHungerManager()).sanguinisluxuria$addHunger(1, 0.125f);
+            ((VampireHungerManager) player.getHungerManager()).sanguinisluxuria$addHunger(1, 0.25f);
         else BLEntityComponents.BLOOD_COMPONENT.get(vampireEntity).addBlood(1);
 
         BloodEvents.BLOOD_DRAINED.invoker().onBloodDrained(vampireEntity, target, 1);
@@ -184,7 +184,7 @@ public interface VampireComponent extends Component, AutoSyncedComponent, Server
             VampireHelper.transferStatusEffects(vampireEntity, target);
         }
 
-        BLEntityBloodDrainEffects.applyTo(vampireEntity, target);
+        BLBloodDrainEffects.applyTo(vampireEntity, target);
 
         // allow conversion of entities with weakness
         if (!VampireHelper.isVampire(target) && target.hasStatusEffect(StatusEffects.WEAKNESS)) {
@@ -201,9 +201,5 @@ public interface VampireComponent extends Component, AutoSyncedComponent, Server
 
         if (vampireEntity.getRandom().nextDouble() > 0.5f)
             target.wakeUp();
-
-        if (target.getType().isIn(BLTags.Entities.TELEPORTS_ON_DRAIN)) {
-            VampireHelper.teleportRandomly(vampireEntity);
-        }
     }
 }

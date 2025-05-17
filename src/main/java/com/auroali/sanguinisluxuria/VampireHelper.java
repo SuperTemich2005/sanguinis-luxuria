@@ -36,6 +36,8 @@ import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.event.GameEvent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -60,6 +62,13 @@ public class VampireHelper {
         return entity != null && entity.getType().isIn(BLTags.Entities.HAS_BLOOD) && BLEntityComponents.BLOOD_COMPONENT.isProvidedBy(entity);
     }
 
+    /**
+     * Checks if an entity consumes blood (vampire, blood lust effect)
+     *
+     * @param entity the entity to check
+     * @return if the entity consumes blood
+     * @apiNote this does not guarantee that the entity is a vampire
+     */
     public static boolean consumesBlood(Entity entity) {
         if (entity == null)
             return false;
@@ -103,18 +112,21 @@ public class VampireHelper {
      * @param to   the entity to transfer effects to
      */
     public static void transferStatusEffects(LivingEntity from, LivingEntity to) {
+        List<StatusEffectInstance> transferredEffects = new ArrayList<>(from.getStatusEffects().size());
         for (StatusEffectInstance instance : from.getStatusEffects()) {
             if (instance.isAmbient() || Registries.STATUS_EFFECT.getEntry(instance.getEffectType()).isIn(BLTags.StatusEffects.NON_TRANSFERABLE))
                 continue;
 
             to.addStatusEffect(instance);
+            transferredEffects.add(instance);
         }
 
         if (from instanceof ServerPlayerEntity player) {
-            BLAdvancementCriterion.TRANSFER_EFFECTS.trigger(player, player.getStatusEffects().size());
+            BLAdvancementCriterion.TRANSFER_EFFECTS.trigger(player, transferredEffects);
         }
 
-        from.clearStatusEffects();
+        // prevent removing effects that weren't transferred
+        transferredEffects.forEach(effect -> from.removeStatusEffect(effect.getEffectType()));
     }
 
     /**
@@ -122,20 +134,20 @@ public class VampireHelper {
      *
      * @param entity the entity to teleport
      */
-    public static void teleportRandomly(LivingEntity entity) {
+    public static void teleportRandomly(LivingEntity entity, int radius) {
         World world = entity.getWorld();
         double x = entity.getX();
         double y = entity.getY();
         double z = entity.getZ();
 
         for (int i = 0; i < 16; ++i) {
-            double newPosX = entity.getX() + (entity.getRandom().nextDouble() - 0.5) * 16.0;
+            double newPosX = entity.getX() + (entity.getRandom().nextDouble() - 0.5) * radius;
             double newPosY = MathHelper.clamp(
-              entity.getY() + (double) (entity.getRandom().nextInt(16) - 8),
+              entity.getY() + (double) (entity.getRandom().nextInt(radius) - radius / 2.f),
               world.getBottomY(),
               (world.getBottomY() + ((ServerWorld) world).getLogicalHeight() - 1)
             );
-            double newPosZ = entity.getZ() + (entity.getRandom().nextDouble() - 0.5) * 16.0;
+            double newPosZ = entity.getZ() + (entity.getRandom().nextDouble() - 0.5) * radius;
             if (entity.hasVehicle()) {
                 entity.stopRiding();
             }
@@ -254,6 +266,17 @@ public class VampireHelper {
         return amountToFill;
     }
 
+    /**
+     * Applies an attribute modifier to an entity if the entity
+     * has a certain amount of blood. Otherwise, remove
+     * the modifier
+     *
+     * @param entity         the target entity
+     * @param attribute      the attribute to apply the modifier to
+     * @param modifier       the modifier to apply
+     * @param blood          the entity's blood component
+     * @param bloodPredicate the predicate for testing the blood component
+     */
     public static void applyModifierFromBlood(LivingEntity entity, EntityAttribute attribute, EntityAttributeModifier modifier, BloodComponent blood, Predicate<BloodComponent> bloodPredicate) {
         AttributeContainer attributes = entity.getAttributes();
         EntityAttributeInstance instance = attributes.getCustomInstance(attribute);
@@ -261,6 +284,16 @@ public class VampireHelper {
             applyModifierFromBlood(instance, modifier, blood, bloodPredicate);
     }
 
+    /**
+     * Applies an attribute modifier to an attribute instance if the entity
+     * has a certain amount of blood. Otherwise, remove
+     * the modifier
+     *
+     * @param instance       the attribute instance to apply the modifier to
+     * @param modifier       the modifier to apply
+     * @param blood          the entity's blood component
+     * @param bloodPredicate the predicate for testing the blood component
+     */
     public static void applyModifierFromBlood(EntityAttributeInstance instance, EntityAttributeModifier modifier, BloodComponent blood, Predicate<BloodComponent> bloodPredicate) {
         if (instance.hasModifier(modifier) && !bloodPredicate.test(blood))
             instance.removeModifier(modifier);

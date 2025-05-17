@@ -1,0 +1,27 @@
+{
+  "type": "sanguinisluxuria:spawn",
+  "conditions": [
+    {
+      "type": "sanguinisluxuria:context",
+      "value": {
+        "conversion": "deconverting"
+      }
+    }
+  ],
+  "entity": "minecraft:zombie_villager",
+  "target": "minecraft:villager",
+  "transformers": [
+    {
+      "type": "sanguinisluxuria:copy",
+      "source": "VillagerData"
+    },
+    {
+      "type": "sanguinisluxuria:copy",
+      "source": "Xp"
+    },
+    {
+      "type": "sanguinisluxuria:copy",
+      "source": "Offers"
+    }
+  ]
+}

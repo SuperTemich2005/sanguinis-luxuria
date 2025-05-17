@@ -11,9 +11,9 @@
   ],
   "mixins": [
     "AbstractBlockStateMixin",
+    "BedBlockMixin",
     "BlockEntityTypeMixin",
     "CakeBlockMixin",
-    "DatapackContentsMixin",
     "HungerManagerMixin",
     "IronGolemEntityMixin",
     "ItemStackMixin",

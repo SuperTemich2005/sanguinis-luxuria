@@ -4,19 +4,7 @@ import com.auroali.sanguinisluxuria.common.registry.BLBlocks;
 import com.auroali.sanguinisluxuria.common.registry.BLItems;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTableProvider;
-import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.Items;
-import net.minecraft.loot.LootPool;
-import net.minecraft.loot.LootTable;
-import net.minecraft.loot.condition.MatchToolLootCondition;
-import net.minecraft.loot.entry.AlternativeEntry;
-import net.minecraft.loot.entry.ItemEntry;
-import net.minecraft.loot.function.ApplyBonusLootFunction;
-import net.minecraft.loot.function.ExplosionDecayLootFunction;
-import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
-import net.minecraft.predicate.NumberRange;
-import net.minecraft.predicate.item.EnchantmentPredicate;
-import net.minecraft.predicate.item.ItemPredicate;
 
 public class BLBlockLootTableProvider extends FabricBlockLootTableProvider {
     public BLBlockLootTableProvider(FabricDataOutput dataGenerator) {
@@ -28,32 +16,10 @@ public class BLBlockLootTableProvider extends FabricBlockLootTableProvider {
         this.addDrop(BLBlocks.ALTAR);
         this.addDrop(BLBlocks.PEDESTAL);
         this.addDrop(BLBlocks.BLOOD_CAULDRON, Items.CAULDRON);
-        this.addDrop(BLBlocks.SILVER_ORE, new LootTable.Builder()
-          .pool(new LootPool.Builder()
-            .rolls(ConstantLootNumberProvider.create(1))
-            .with(AlternativeEntry.builder(
-                ItemEntry.builder(BLItems.SILVER_ORE)
-                  .conditionally(MatchToolLootCondition.builder(
-                      ItemPredicate.Builder.create().enchantment(new EnchantmentPredicate(Enchantments.SILK_TOUCH, NumberRange.IntRange.atLeast(1)))
-                    )
-                  ), ItemEntry.builder(BLItems.RAW_SILVER)
-                  .apply(ApplyBonusLootFunction.oreDrops(Enchantments.FORTUNE))
-                  .apply(ExplosionDecayLootFunction.builder())
-              )
-            )));
-        this.addDrop(BLBlocks.DEEPSLATE_SILVER_ORE, new LootTable.Builder()
-          .pool(new LootPool.Builder()
-            .rolls(ConstantLootNumberProvider.create(1))
-            .with(AlternativeEntry.builder(
-                ItemEntry.builder(BLItems.DEEPSLATE_SILVER_ORE)
-                  .conditionally(MatchToolLootCondition.builder(
-                      ItemPredicate.Builder.create().enchantment(new EnchantmentPredicate(Enchantments.SILK_TOUCH, NumberRange.IntRange.atLeast(1)))
-                    )
-                  ), ItemEntry.builder(BLItems.RAW_SILVER)
-                  .apply(ApplyBonusLootFunction.oreDrops(Enchantments.FORTUNE))
-                  .apply(ExplosionDecayLootFunction.builder())
-              )
-            )));
+
+        this.oreDrops(BLBlocks.SILVER_ORE, BLItems.RAW_SILVER);
+        this.oreDrops(BLBlocks.DEEPSLATE_SILVER_ORE, BLItems.RAW_SILVER);
+
         this.addDrop(BLBlocks.SILVER_BLOCK);
         this.addDrop(BLBlocks.RAW_SILVER_BLOCK);
 
@@ -68,6 +34,19 @@ public class BLBlockLootTableProvider extends FabricBlockLootTableProvider {
 
         this.addDrop(BLBlocks.DECAYED_PRESSURE_PLATE);
         this.addDrop(BLBlocks.SILVER_PRESSURE_PLATE);
+
+        this.addDrop(BLBlocks.DECAYED_PLANKS);
+        this.addDrop(BLBlocks.DECAYED_STAIRS);
+        this.addDrop(BLBlocks.DECAYED_DOOR);
+        this.addDrop(BLBlocks.DECAYED_SIGN);
+        this.addDrop(BLBlocks.DECAYED_HANGING_SIGN);
+        this.addDrop(BLBlocks.DECAYED_WALL_HANGING_SIGN);
+        this.addDrop(BLBlocks.DECAYED_WALL_SIGN);
+        this.addDrop(BLBlocks.DECAYED_FENCE);
+        this.addDrop(BLBlocks.DECAYED_FENCE_GATE);
+        this.addDrop(BLBlocks.DECAYED_SLAB);
+        this.addDrop(BLBlocks.DECAYED_BUTTON);
+        this.addDrop(BLBlocks.SILVER_BARS);
 
         this.addPottedPlantDrops(BLBlocks.POTTED_GRAFTED_SAPLING);
     }

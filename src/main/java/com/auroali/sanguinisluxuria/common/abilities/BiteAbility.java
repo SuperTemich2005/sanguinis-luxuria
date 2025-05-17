@@ -1,6 +1,7 @@
 package com.auroali.sanguinisluxuria.common.abilities;
 
 import com.auroali.sanguinisluxuria.VampireHelper;
+import com.auroali.sanguinisluxuria.common.components.EntityTrackingDrainer;
 import com.auroali.sanguinisluxuria.common.components.VampireComponent;
 import com.auroali.sanguinisluxuria.common.registry.BLDamageSources;
 import com.auroali.sanguinisluxuria.common.registry.BLParticles;
@@ -14,7 +15,7 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.random.Random;
 
-public class BiteAbility extends VampireAbility implements EntitySyncableVampireAbility<LivingEntity> {
+public class BiteAbility extends VampireAbility {
     @Override
     public void activate(LivingEntity entity, VampireComponent component) {
         if (component.getAbilties().isOnCooldown(this) || VampireHelper.isMasked(entity))
@@ -30,10 +31,28 @@ public class BiteAbility extends VampireAbility implements EntitySyncableVampire
 
         target.damage(BLDamageSources.bite(entity), 3);
         target.addStatusEffect(new StatusEffectInstance(BLStatusEffects.BLEEDING, 100, 0));
-        this.sync(entity, target);
+        // spawn particles
+        if (entity.getWorld() instanceof ServerWorld serverWorld) {
+            Box entityBox = target.getBoundingBox();
+
+            serverWorld.spawnParticles(
+              BLParticles.DRIPPING_BLOOD,
+              entityBox.getCenter().getX(),
+              entityBox.getCenter().getY(),
+              entityBox.getCenter().getZ(),
+              20,
+              entityBox.getXLength() / 2.d,
+              entityBox.getYLength() / 2.d,
+              entityBox.getZLength() / 2.d,
+              0.d
+            );
+        }
         if (component.getAbilties().hasAbility(BLVampireAbilities.INFECTIOUS)) {
             SyncableVampireAbility.syncAbility(entity, BLVampireAbilities.INFECTIOUS, InfectiousAbility.InfectiousData.create(target, entity.getStatusEffects()));
             VampireHelper.transferStatusEffects(entity, target);
+        }
+        if (component instanceof EntityTrackingDrainer drainer && target.isAlive()) {
+            drainer.setLastDrained(target);
         }
         component.getAbilties().setCooldown(this, 220);
     }
