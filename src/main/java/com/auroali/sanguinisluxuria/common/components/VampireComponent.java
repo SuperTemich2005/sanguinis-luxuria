@@ -2,10 +2,10 @@ package com.auroali.sanguinisluxuria.common.components;
 
 import com.auroali.sanguinisluxuria.VampireHelper;
 import com.auroali.sanguinisluxuria.common.VampireHungerManager;
-import com.auroali.sanguinisluxuria.common.abilities.InfectiousAbility;
 import com.auroali.sanguinisluxuria.common.abilities.SyncableVampireAbility;
 import com.auroali.sanguinisluxuria.common.abilities.VampireAbility;
 import com.auroali.sanguinisluxuria.common.abilities.VampireAbilityContainer;
+import com.auroali.sanguinisluxuria.common.abilities.passive.InfectiousAbility;
 import com.auroali.sanguinisluxuria.common.blood.BloodConstants;
 import com.auroali.sanguinisluxuria.common.events.BloodEvents;
 import com.auroali.sanguinisluxuria.common.registry.*;
@@ -180,8 +180,11 @@ public interface VampireComponent extends Component, AutoSyncedComponent, Server
 
         // if the potion transfer ability is unlocked, transfer potion effects to the target
         if (vampire.getAbilties().hasAbility(BLVampireAbilities.INFECTIOUS)) {
-            SyncableVampireAbility.syncAbility(target, BLVampireAbilities.INFECTIOUS, InfectiousAbility.InfectiousData.create(target, vampireEntity.getStatusEffects()));
-            VampireHelper.transferStatusEffects(vampireEntity, target);
+            SyncableVampireAbility.syncAbility(
+              target,
+              BLVampireAbilities.INFECTIOUS,
+              InfectiousAbility.InfectiousData.create(target, VampireHelper.transferStatusEffects(vampireEntity, target))
+            );
         }
 
         BLBloodDrainEffects.applyTo(vampireEntity, target);

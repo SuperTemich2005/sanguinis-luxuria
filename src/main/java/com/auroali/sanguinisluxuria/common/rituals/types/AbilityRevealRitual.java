@@ -1,9 +1,11 @@
-package com.auroali.sanguinisluxuria.common.rituals;
+package com.auroali.sanguinisluxuria.common.rituals.types;
 
 import com.auroali.sanguinisluxuria.common.abilities.VampireAbility;
 import com.auroali.sanguinisluxuria.common.components.BLEntityComponents;
 import com.auroali.sanguinisluxuria.common.components.VampireComponent;
 import com.auroali.sanguinisluxuria.common.registry.BLRitualTypes;
+import com.auroali.sanguinisluxuria.common.rituals.RitualParameters;
+import com.auroali.sanguinisluxuria.common.rituals.RitualType;
 import com.mojang.serialization.Codec;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -38,7 +40,7 @@ public class AbilityRevealRitual extends ItemRitual {
         // generate the pages for the book
         List<Text> pages = new ArrayList<>();
         int lines = 0;
-        for (VampireAbility ability : vampire.getAbilties()) {
+        for (VampireAbility ability : vampire.getAbilties().abilities()) {
             Text abilityText = Text.translatable(ability.getTranslationKey()).formatted(Formatting.DARK_RED, Formatting.BOLD, Formatting.ITALIC);
             if (pages.isEmpty()) {
                 pages.add(abilityText);
