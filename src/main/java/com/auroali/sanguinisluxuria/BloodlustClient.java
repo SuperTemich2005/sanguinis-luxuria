@@ -165,11 +165,14 @@ public class BloodlustClient implements ClientModInitializer {
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player != null)
+            if (VampireHelper.consumesBlood(client.player))
                 this.vampireHungerEffectManager.tick(client.player);
         });
 
-        ShaderEffectRenderCallback.EVENT.register(this.vampireHungerEffectManager::render);
+        ShaderEffectRenderCallback.EVENT.register(delta -> {
+        	if(VampireHelper.consumesBlood(MinecraftClient.getInstance().player))
+        		this.vampireHungerEffectManager.render(delta);
+        });
     }
 
     public void registerBindings() {
