@@ -11,7 +11,6 @@ import com.auroali.sanguinisluxuria.common.registry.BLDamageSources;
 import com.auroali.sanguinisluxuria.common.registry.BLParticles;
 import com.auroali.sanguinisluxuria.common.registry.BLStatusEffects;
 import com.auroali.sanguinisluxuria.common.registry.BLVampireAbilities;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.server.world.ServerWorld;
@@ -22,11 +21,11 @@ import net.minecraft.util.math.Box;
 public class BiteAbility extends VampireAbility {
     @Override
     public void activate(LivingEntity entity, VampireComponent component) {
-        VampireAbilityContainer.AbilityEntry entry = component.getAbilties().getAbility(this);
+        VampireAbilityContainer.AbilityEntry entry = component.getAbilityContainer().getAbility(this);
         if (entry.isOnCooldown() || VampireHelper.isMasked(entity))
             return;
 
-        HitResult result = VampireHelper.raycastEntity(entity, entity.getRotationVector(), Entity::isLiving);
+        HitResult result = VampireHelper.raycastEntity(entity, entity.getRotationVector(), e -> e instanceof LivingEntity);
         if (result.getType() != HitResult.Type.ENTITY)
             return;
 
@@ -52,7 +51,7 @@ public class BiteAbility extends VampireAbility {
               0.d
             );
         }
-        if (component.getAbilties().hasAbility(BLVampireAbilities.INFECTIOUS)) {
+        if (component.getAbilityContainer().hasAbility(BLVampireAbilities.INFECTIOUS)) {
             SyncableVampireAbility.syncAbility(
               entity,
               BLVampireAbilities.INFECTIOUS,
