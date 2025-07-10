@@ -2,7 +2,7 @@ package com.auroali.sanguinisluxuria.common.commands;
 
 import com.auroali.sanguinisluxuria.common.commands.arguments.ConversionArgument;
 import com.auroali.sanguinisluxuria.common.conversions.ConversionContext;
-import com.auroali.sanguinisluxuria.common.registry.BLConversions;
+import com.auroali.sanguinisluxuria.common.registry.SLConversions;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -27,12 +27,9 @@ public class ConvertCommand {
     }
 
     public static int convert(Collection<? extends Entity> entities, ConversionContext.Conversion conversion) {
-        if (!conversion.isValidConversion()) {
-            throw new CommandException(Text.translatable("commands.sanguinisluxuria.convert.invalid_conversion", conversion));
-        }
         for (Entity entity : entities) {
-            if (!BLConversions.convertEntity(ConversionContext.from(entity, conversion)))
-                throw new CommandException(Text.translatable("commands.sanguinisluxuria.convert.invalid_conversion", entity.getName()));
+            if (!SLConversions.convertEntity(ConversionContext.from(entity, conversion)))
+                throw new CommandException(Text.translatable("commands.sanguinisluxuria.convert.failed", entity.getName()));
         }
         return 0;
     }

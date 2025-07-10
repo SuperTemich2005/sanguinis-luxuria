@@ -3,8 +3,8 @@ package com.auroali.sanguinisluxuria.common.blocks;
 import com.auroali.sanguinisluxuria.common.blood.BloodConstants;
 import com.auroali.sanguinisluxuria.common.events.BloodStorageFillEvents;
 import com.auroali.sanguinisluxuria.common.items.BloodStorageItem;
-import com.auroali.sanguinisluxuria.common.registry.BLBlocks;
-import com.auroali.sanguinisluxuria.common.registry.BLItems;
+import com.auroali.sanguinisluxuria.common.registry.SLBlocks;
+import com.auroali.sanguinisluxuria.common.registry.SLItems;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import net.minecraft.block.Block;
@@ -120,7 +120,7 @@ public class BloodSplatterBlock extends Block {
     }
 
     public boolean connectsToBlock(BlockState otherState) {
-        return otherState.isOf(this) || otherState.isOf(BLBlocks.ALTAR) || otherState.isOf(BLBlocks.PEDESTAL);
+        return otherState.isOf(this) || otherState.isOf(SLBlocks.ALTAR) || otherState.isOf(SLBlocks.PEDESTAL);
     }
 
     @Override
@@ -227,12 +227,12 @@ public class BloodSplatterBlock extends Block {
 
     @Override
     public boolean canReplace(BlockState state, ItemPlacementContext context) {
-        return context.getStack().isEmpty() || !context.getStack().isOf(this.asItem());
+        return context.getStack().isEmpty() || !BloodStorageItem.isItemDrainable(context.getStack());
     }
 
     @Override
     public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
-        return BloodStorageItem.createStack(BLItems.BLOOD_BOTTLE);
+        return BloodStorageItem.createStack(SLItems.BLOOD_BOTTLE);
     }
 
     @Override

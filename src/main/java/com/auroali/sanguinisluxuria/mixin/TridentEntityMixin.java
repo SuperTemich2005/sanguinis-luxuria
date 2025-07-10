@@ -1,11 +1,10 @@
 package com.auroali.sanguinisluxuria.mixin;
 
 import com.auroali.sanguinisluxuria.VampireHelper;
-import com.auroali.sanguinisluxuria.common.components.BLEntityComponents;
 import com.auroali.sanguinisluxuria.common.components.BloodComponent;
 import com.auroali.sanguinisluxuria.common.components.BloodTransferComponent;
-import com.auroali.sanguinisluxuria.common.registry.BLSounds;
-import com.auroali.sanguinisluxuria.common.registry.BLStatusEffects;
+import com.auroali.sanguinisluxuria.common.registry.SLSounds;
+import com.auroali.sanguinisluxuria.common.registry.SLStatusEffects;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -34,9 +33,9 @@ public abstract class TridentEntityMixin extends PersistentProjectileEntity {
         super(entityType, world);
     }
 
-    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/projectile/TridentEntity;getOwner()Lnet/minecraft/entity/Entity;", shift = At.Shift.BY, by = 2), cancellable = true)
+    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/data/DataTracker;get(Lnet/minecraft/entity/data/TrackedData;)Ljava/lang/Object;", ordinal = 0), cancellable = true)
     public void sanguinisluxuria$handleBloodDrainLogic(CallbackInfo ci, @Local(ordinal = 0) Entity owner) {
-        BloodTransferComponent bloodTransfer = BLEntityComponents.BLOOD_TRANSFER_COMPONENT.get(this);
+        BloodTransferComponent bloodTransfer = BloodTransferComponent.KEY.get(this);
         int bloodDrainLevel = bloodTransfer.getBloodTransferLevel();
         Entity latched = bloodTransfer.getLatchedEntity();
         if (bloodDrainLevel != 0 && latched != null && latched.isAlive() && !latched.isRemoved()) {
@@ -54,10 +53,9 @@ public abstract class TridentEntityMixin extends PersistentProjectileEntity {
                 return;
             }
 
-            BloodComponent blood = BLEntityComponents.BLOOD_COMPONENT.get(latched);
-            BloodComponent ownerBlood = BLEntityComponents.BLOOD_COMPONENT.get(owner);
+            BloodComponent blood = BloodComponent.KEY.get(latched);
 
-            if ((latched instanceof LivingEntity livingTarget && livingTarget.hasStatusEffect(BLStatusEffects.BLOOD_PROTECTION)) || blood.getBlood() <= Math.max(1, blood.getMaxBlood() / (1 + bloodDrainLevel))) {
+            if ((latched instanceof LivingEntity livingTarget && livingTarget.hasStatusEffect(SLStatusEffects.BLOOD_PROTECTION)) || blood.getBlood() <= Math.max(1, blood.getMaxBlood() / (1 + bloodDrainLevel))) {
                 bloodTransfer.setLatchedEntity(null);
                 this.sanguinisluxuria$latchedTicks = 0;
                 return;
@@ -66,12 +64,10 @@ public abstract class TridentEntityMixin extends PersistentProjectileEntity {
             this.setPosition(latched.getPos().add(0, latched.getEyeHeight(latched.getPose()) * 0.75, 0));
             this.setVelocity(Vec3d.ZERO);
 
-            int timeToDrain = latched instanceof LivingEntity e && e.hasStatusEffect(BLStatusEffects.BLEEDING) ? 20 : 40;
-            if (this.sanguinisluxuria$latchedTicks % timeToDrain == 0 && !this.getWorld().isClient && blood.drainBlood(1, owner instanceof LivingEntity living ? living : null)) {
-                if (!(owner instanceof LivingEntity entity && VampireHelper.fillHeldBloodStorage(entity, 1) != 0) && VampireHelper.isVampire(owner)) {
-                    ownerBlood.addBlood(1);
-                }
-                this.playSound(BLSounds.DRAIN_BLOOD, 1.0f, 1.0f);
+            int timeToDrain = latched instanceof LivingEntity e && e.hasStatusEffect(SLStatusEffects.BLEEDING) ? 20 : 40;
+            if (this.sanguinisluxuria$latchedTicks % timeToDrain == 0 && !this.getWorld().isClient && blood.drainBlood(1, this.sanguinisluxuria$getOwnerAsLiving(owner))) {
+                this.sanguinisluxuria$transferBloodToOwner(owner, 1);
+                this.playSound(SLSounds.DRAIN_BLOOD, 1.0f, 1.0f);
             }
 
             this.sanguinisluxuria$latchedTicks++;
@@ -81,12 +77,28 @@ public abstract class TridentEntityMixin extends PersistentProjectileEntity {
 
     @Inject(method = "onEntityHit", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/projectile/TridentEntity;playSound(Lnet/minecraft/sound/SoundEvent;FF)V"))
     public void sanguinisluxuria$latchOnEntity(EntityHitResult entityHitResult, CallbackInfo ci, @Local(ordinal = 0) Entity target, @Local(ordinal = 1) Entity owner) {
-        BloodTransferComponent bloodTransfer = BLEntityComponents.BLOOD_TRANSFER_COMPONENT.get(this);
+        BloodTransferComponent bloodTransfer = BloodTransferComponent.KEY.get(this);
         if (bloodTransfer.getBloodTransferLevel() != 0 && VampireHelper.hasBlood(target)) {
-            if (target instanceof LivingEntity livingTarget && livingTarget.hasStatusEffect(BLStatusEffects.BLOOD_PROTECTION))
+            if (target instanceof LivingEntity livingTarget && livingTarget.hasStatusEffect(SLStatusEffects.BLOOD_PROTECTION))
                 return;
             bloodTransfer.setLatchedEntity(target);
             this.sanguinisluxuria$latchedTicks = 0;
         }
+    }
+
+    @Unique
+    private void sanguinisluxuria$transferBloodToOwner(Entity owner, int amount) {
+        LivingEntity livingOwner = this.sanguinisluxuria$getOwnerAsLiving(owner);
+        if (livingOwner != null && VampireHelper.fillHeldBloodStorage(livingOwner, amount) != 0)
+            return;
+
+        if (VampireHelper.consumesBlood(owner) && VampireHelper.hasBlood(owner)) {
+            BloodComponent.KEY.get(owner).addBlood(amount);
+        }
+    }
+
+    @Unique
+    private LivingEntity sanguinisluxuria$getOwnerAsLiving(Entity owner) {
+        return owner instanceof LivingEntity living ? living : null;
     }
 }

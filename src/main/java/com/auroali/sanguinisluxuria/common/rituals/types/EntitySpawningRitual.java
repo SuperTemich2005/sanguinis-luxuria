@@ -1,9 +1,10 @@
 package com.auroali.sanguinisluxuria.common.rituals.types;
 
-import com.auroali.sanguinisluxuria.common.registry.BLRitualTypes;
+import com.auroali.sanguinisluxuria.common.registry.SLRitualTypes;
 import com.auroali.sanguinisluxuria.common.rituals.Ritual;
 import com.auroali.sanguinisluxuria.common.rituals.RitualParameters;
 import com.auroali.sanguinisluxuria.common.rituals.RitualType;
+import com.auroali.sanguinisluxuria.common.rituals.RitualUtil;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.entity.EntityType;
@@ -43,11 +44,12 @@ public record EntitySpawningRitual(EntityType<?> type, NbtCompound nbt, boolean 
               parameters.world().spawnEntity(entity);
               if (this.autoTame() && entity instanceof TameableEntity tameable)
                   parameters.applyToPlayerInitiator(tameable::setOwner);
+              RitualUtil.spawnSuccessParticles(parameters);
           });
     }
 
     @Override
     public RitualType<?> getType() {
-        return BLRitualTypes.ENTITY_SPAWNING_RITUAL_TYPE;
+        return SLRitualTypes.ENTITY_SPAWNING_RITUAL_TYPE;
     }
 }

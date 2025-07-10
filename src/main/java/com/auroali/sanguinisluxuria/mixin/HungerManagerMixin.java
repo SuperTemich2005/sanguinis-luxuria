@@ -2,8 +2,8 @@ package com.auroali.sanguinisluxuria.mixin;
 
 import com.auroali.sanguinisluxuria.VampireHelper;
 import com.auroali.sanguinisluxuria.common.VampireHungerManager;
-import com.auroali.sanguinisluxuria.common.components.BLEntityComponents;
-import com.auroali.sanguinisluxuria.common.registry.BLTags;
+import com.auroali.sanguinisluxuria.common.components.VampireComponent;
+import com.auroali.sanguinisluxuria.common.registry.SLTags;
 import com.auroali.sanguinisluxuria.config.BLConfig;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -37,7 +37,7 @@ public class HungerManagerMixin implements VampireHungerManager {
       constant = @Constant(floatValue = 1.0f, ordinal = 1)
     )
     public float sanguinisluxuria$stopStarvingDamageWhenDowned(float constant) {
-        if (VampireHelper.isVampire(this.sanguinisluxuria$hmTrackedPlayer) && BLEntityComponents.VAMPIRE_COMPONENT.get(this.sanguinisluxuria$hmTrackedPlayer).isDowned()) {
+        if (VampireHelper.isVampire(this.sanguinisluxuria$hmTrackedPlayer) && VampireComponent.KEY.get(this.sanguinisluxuria$hmTrackedPlayer).isDowned()) {
             return 0;
         }
         return constant;
@@ -54,14 +54,14 @@ public class HungerManagerMixin implements VampireHungerManager {
 
     @ModifyConstant(method = "update", constant = @Constant(intValue = 10))
     public int sanguinisluxuria$modifyHealRate(int constant) {
-        if (VampireHelper.isVampire(this.sanguinisluxuria$hmTrackedPlayer) && !this.sanguinisluxuria$hmTrackedPlayer.isOnFire())
+        if (VampireHelper.isVampire(this.sanguinisluxuria$hmTrackedPlayer) && this.sanguinisluxuria$canFastHeal())
             return constant / 4;
         return constant;
     }
 
     @ModifyConstant(method = "update", constant = @Constant(intValue = 80, ordinal = 0))
     public int sanguinisluxuria$modifySecondHealRate(int constant) {
-        if (VampireHelper.isVampire(this.sanguinisluxuria$hmTrackedPlayer) && !this.sanguinisluxuria$hmTrackedPlayer.isOnFire())
+        if (VampireHelper.isVampire(this.sanguinisluxuria$hmTrackedPlayer) && this.sanguinisluxuria$canFastHeal())
             return constant / 4;
         return constant;
     }
@@ -85,7 +85,7 @@ public class HungerManagerMixin implements VampireHungerManager {
 
     @WrapOperation(method = "eat", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/HungerManager;add(IF)V"))
     public void sanguinisluxuria$handleVampireEdibleFood(HungerManager instance, int food, float saturationModifier, Operation<Void> original, @Local(argsOnly = true) ItemStack stack) {
-        if (VampireHelper.consumesBlood(this.sanguinisluxuria$hmTrackedPlayer) && stack.isIn(BLTags.Items.VAMPIRES_GET_HUNGER_FROM))
+        if (VampireHelper.consumesBlood(this.sanguinisluxuria$hmTrackedPlayer) && stack.isIn(SLTags.Items.VAMPIRES_GET_HUNGER_FROM))
             this.sanguinisluxuria$addHunger(food, saturationModifier);
         else
             original.call(instance, food, saturationModifier);
@@ -108,5 +108,10 @@ public class HungerManagerMixin implements VampireHungerManager {
     public void sanguinisluxuria$addHunger(int food, float saturationModifier) {
         this.foodLevel = Math.min(food + this.foodLevel, 20);
         this.saturationLevel = Math.min(this.saturationLevel + (float) food * saturationModifier * 2.0F, (float) this.foodLevel);
+    }
+
+    @Unique
+    protected boolean sanguinisluxuria$canFastHeal() {
+        return !this.sanguinisluxuria$hmTrackedPlayer.isOnFire();
     }
 }

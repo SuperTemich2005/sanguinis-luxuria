@@ -1,6 +1,6 @@
 package com.auroali.sanguinisluxuria.compat.patchouli;
 
-import com.auroali.sanguinisluxuria.Bloodlust;
+import com.auroali.sanguinisluxuria.SanguinisLuxuria;
 import com.auroali.sanguinisluxuria.common.recipes.AltarRitualRecipe;
 import com.auroali.sanguinisluxuria.common.rituals.RitualType;
 import net.minecraft.recipe.Ingredient;
@@ -8,7 +8,6 @@ import net.minecraft.recipe.RecipeManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Util;
 import net.minecraft.world.World;
 import vazkii.patchouli.api.IComponentProcessor;
 import vazkii.patchouli.api.IVariable;
@@ -27,7 +26,7 @@ public class AltarRecipeProcessor implements IComponentProcessor {
           .flatMap(r -> r instanceof AltarRitualRecipe ritualRecipe ? Optional.of(ritualRecipe) : Optional.empty())
           .orElse(null);
         if (this.recipe == null) {
-            Bloodlust.LOGGER.warn("Could not find ritual recipe {} for patchouli entry", id);
+            SanguinisLuxuria.LOGGER.warn("Could not find ritual recipe {} for patchouli entry", id);
         }
     }
 
@@ -51,7 +50,7 @@ public class AltarRecipeProcessor implements IComponentProcessor {
             Identifier id = RitualType.getId(this.recipe.getRitual().getType());
             if (id == null)
                 return IVariable.empty();
-            Text name = Text.translatable(Util.createTranslationKey("altar_ritual", id)).formatted(Formatting.GOLD, Formatting.BOLD);
+            Text name = Text.translatable(this.recipe.getRitual().getType().getTranslationKey()).formatted(Formatting.GOLD, Formatting.BOLD);
             return IVariable.from(name);
         }
         return null;

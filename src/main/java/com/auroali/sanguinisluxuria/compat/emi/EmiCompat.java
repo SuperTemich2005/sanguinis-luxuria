@@ -1,10 +1,11 @@
 package com.auroali.sanguinisluxuria.compat.emi;
 
-import com.auroali.sanguinisluxuria.BLResources;
+import com.auroali.sanguinisluxuria.SLResources;
 import com.auroali.sanguinisluxuria.common.recipes.AltarRitualRecipe;
 import com.auroali.sanguinisluxuria.common.recipes.BloodCauldronRecipe;
-import com.auroali.sanguinisluxuria.common.registry.BLItems;
-import com.auroali.sanguinisluxuria.common.registry.BLRecipeTypes;
+import com.auroali.sanguinisluxuria.common.registry.SLItems;
+import com.auroali.sanguinisluxuria.common.registry.SLRecipeTypes;
+import com.auroali.sanguinisluxuria.common.rituals.Ritual;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
@@ -17,12 +18,12 @@ import net.minecraft.recipe.RecipeManager;
 import net.minecraft.util.Identifier;
 
 public class EmiCompat implements EmiPlugin {
-    public static final Identifier TEXTURES = BLResources.id("textures/gui/emi.png");
-    public static final EmiStack ALTAR = EmiStack.of(BLItems.ALTAR);
-    public static final EmiStack PEDESTAL = EmiStack.of(BLItems.PEDESTAL);
+    public static final Identifier TEXTURES = SLResources.id("textures/gui/emi.png");
+    public static final EmiStack ALTAR = EmiStack.of(SLItems.ALTAR);
+    public static final EmiStack PEDESTAL = EmiStack.of(SLItems.PEDESTAL);
     public static final EmiStack CAULDRON = EmiStack.of(Items.CAULDRON);
-    public static final EmiRecipeCategory ALTAR_RECIPE_CATEGORY = new EmiRecipeCategory(BLResources.ALTAR_RECIPE_ID, ALTAR, new EmiTexture(TEXTURES, 0, 16, 16, 16), EmiRecipeSorting.compareOutputThenInput());
-    public static final EmiRecipeCategory BLOOD_CAULDRON_RECIPE_CATEGORY = new EmiRecipeCategory(BLResources.BLOOD_CAULDRON_ID, CAULDRON, new EmiTexture(BLResources.id("textures/gui/emi.png"), 0, 0, 16, 16), EmiRecipeSorting.compareOutputThenInput());
+    public static final EmiRecipeCategory ALTAR_RECIPE_CATEGORY = new EmiRecipeCategory(SLResources.ALTAR_RECIPE_ID, ALTAR, new EmiTexture(TEXTURES, 0, 16, 16, 16), EmiRecipeSorting.compareOutputThenInput());
+    public static final EmiRecipeCategory BLOOD_CAULDRON_RECIPE_CATEGORY = new EmiRecipeCategory(SLResources.BLOOD_CAULDRON_ID, CAULDRON, new EmiTexture(SLResources.id("textures/gui/emi.png"), 0, 0, 16, 16), EmiRecipeSorting.compareOutputThenInput());
 
     @Override
     public void register(EmiRegistry registry) {
@@ -33,10 +34,14 @@ public class EmiCompat implements EmiPlugin {
         registry.addWorkstation(BLOOD_CAULDRON_RECIPE_CATEGORY, CAULDRON);
 
         RecipeManager manager = registry.getRecipeManager();
-        for (AltarRitualRecipe recipe : manager.listAllOfType(BLRecipeTypes.ALTAR_RECIPE)) {
-            registry.addRecipe(new AltarEmiRecipe(recipe));
+        for (AltarRitualRecipe recipe : manager.listAllOfType(SLRecipeTypes.ALTAR_RECIPE)) {
+            Ritual ritual = recipe.getRitual();
+            EmiStack output = RitualEmiStack.of(ritual);
+            registry.addRecipe(new AltarEmiRecipe(recipe, output));
+            if (output instanceof RitualEmiStack)
+                registry.addEmiStack(output);
         }
-        for (BloodCauldronRecipe recipe : manager.listAllOfType(BLRecipeTypes.BLOOD_CAULDRON_TYPE)) {
+        for (BloodCauldronRecipe recipe : manager.listAllOfType(SLRecipeTypes.BLOOD_CAULDRON_TYPE)) {
             registry.addRecipe(new CauldronInfusingEmiRecipe(recipe, MinecraftClient.getInstance()));
         }
     }

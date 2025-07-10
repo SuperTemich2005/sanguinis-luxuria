@@ -1,8 +1,8 @@
 package com.auroali.sanguinisluxuria.common.components.impl;
 
+import com.auroali.sanguinisluxuria.common.abilities.DefaultedVampireAbilityContainer;
 import com.auroali.sanguinisluxuria.common.abilities.VampireAbility;
 import com.auroali.sanguinisluxuria.common.abilities.VampireAbilityContainer;
-import com.auroali.sanguinisluxuria.common.components.BLEntityComponents;
 import com.auroali.sanguinisluxuria.common.components.VampireComponent;
 import com.google.common.base.Predicates;
 import net.minecraft.entity.LivingEntity;
@@ -11,23 +11,19 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.function.Predicate;
 
 public class EntityVampireComponent<T extends LivingEntity> implements VampireComponent {
     private final Predicate<T> vampirePredicate;
     private final T holder;
     private final VampireAbilityContainer abilities;
-    private final List<VampireAbility> defaultAbilities;
     private boolean downed;
     private boolean isMist;
 
     public EntityVampireComponent(T holder, Predicate<T> vampirePredicate, VampireAbility... abilities) {
         this.holder = holder;
         this.vampirePredicate = vampirePredicate;
-        this.abilities = new VampireAbilityContainer(() -> BLEntityComponents.VAMPIRE_COMPONENT.sync(this.holder));
-        this.defaultAbilities = Arrays.stream(abilities).toList();
-        this.defaultAbilities.forEach(this.abilities::addAbility);
+        this.abilities = new DefaultedVampireAbilityContainer(Arrays.asList(abilities), () -> VampireComponent.KEY.sync(this.holder));
     }
 
     public EntityVampireComponent(T holder, VampireAbility... abilities) {
@@ -57,7 +53,7 @@ public class EntityVampireComponent<T extends LivingEntity> implements VampireCo
     @Override
     public void setDowned(boolean down) {
         this.downed = down;
-        BLEntityComponents.VAMPIRE_COMPONENT.sync(this.holder);
+        VampireComponent.KEY.sync(this.holder);
     }
 
     @Override
@@ -68,7 +64,7 @@ public class EntityVampireComponent<T extends LivingEntity> implements VampireCo
     @Override
     public void setMist(boolean isMist) {
         this.isMist = isMist;
-        BLEntityComponents.VAMPIRE_COMPONENT.sync(this.holder);
+        VampireComponent.KEY.sync(this.holder);
     }
 
     @Override
@@ -94,13 +90,13 @@ public class EntityVampireComponent<T extends LivingEntity> implements VampireCo
     public void readFromNbt(NbtCompound tag) {
         this.downed = tag.getBoolean("Downed");
         this.isMist = tag.getBoolean("IsMist");
-        this.abilities.load(tag);
+        this.abilities.readNbt(tag);
     }
 
     @Override
     public void writeToNbt(NbtCompound tag) {
         tag.putBoolean("Downed", this.downed);
         tag.putBoolean("IsMist", this.isMist);
-        this.abilities.save(tag);
+        this.abilities.writeNbt(tag);
     }
 }

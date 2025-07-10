@@ -1,14 +1,19 @@
 package com.auroali.sanguinisluxuria.common.components;
 
+import com.auroali.sanguinisluxuria.SLResources;
 import com.auroali.sanguinisluxuria.VampireHelper;
 import com.auroali.sanguinisluxuria.common.blood.BloodConstants;
-import com.auroali.sanguinisluxuria.common.registry.BLSounds;
-import com.auroali.sanguinisluxuria.common.registry.BLStatusEffects;
+import com.auroali.sanguinisluxuria.common.registry.SLSounds;
+import com.auroali.sanguinisluxuria.common.registry.SLStatusEffects;
 import dev.onyxstudios.cca.api.v3.component.Component;
+import dev.onyxstudios.cca.api.v3.component.ComponentKey;
+import dev.onyxstudios.cca.api.v3.component.ComponentRegistry;
 import dev.onyxstudios.cca.api.v3.component.sync.AutoSyncedComponent;
 import dev.onyxstudios.cca.api.v3.component.tick.ServerTickingComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -16,6 +21,7 @@ import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 
 public class BloodDrainComponent implements Component, ServerTickingComponent, AutoSyncedComponent, EntityTrackingDrainer {
+    public static final ComponentKey<BloodDrainComponent> KEY = ComponentRegistry.getOrCreate(SLResources.BLOOD_DRAIN_COMPONENT_ID, BloodDrainComponent.class);
     private static final int ENTITY_TRACKING_TICKS = 3600;
     private final LivingEntity holder;
     private LivingEntity target;
@@ -39,8 +45,8 @@ public class BloodDrainComponent implements Component, ServerTickingComponent, A
 
         this.target = entity;
         this.ticksDraining = 0;
-        this.targetHasBleeding = entity.hasStatusEffect(BLStatusEffects.BLEEDING);
-        BLEntityComponents.BLOOD_DRAIN_COMPONENT.sync(this.holder);
+        this.targetHasBleeding = entity.hasStatusEffect(SLStatusEffects.BLEEDING);
+        KEY.sync(this.holder);
     }
 
     /**
@@ -50,7 +56,7 @@ public class BloodDrainComponent implements Component, ServerTickingComponent, A
     public void cancelDrain() {
         this.target = null;
         this.ticksDraining = 0;
-        BLEntityComponents.BLOOD_DRAIN_COMPONENT.sync(this.holder);
+        KEY.sync(this.holder);
     }
 
     /**
@@ -69,6 +75,11 @@ public class BloodDrainComponent implements Component, ServerTickingComponent, A
      */
     public int getTimeDraining() {
         return this.ticksDraining;
+    }
+
+    private void applyDrainEffects() {
+        if (this.target.getWorld().getTime() % 2 == 0)
+            this.target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 4, 6, true, false, false));
     }
 
     @Override
@@ -111,7 +122,9 @@ public class BloodDrainComponent implements Component, ServerTickingComponent, A
             }
         }
 
-        this.targetHasBleeding = this.target.hasStatusEffect(BLStatusEffects.BLEEDING);
+        this.targetHasBleeding = this.target.hasStatusEffect(SLStatusEffects.BLEEDING);
+
+        this.applyDrainEffects();
 
         if (++this.ticksDraining >= this.getTimeToDrain()) {
             this.holder.getWorld().playSound(
@@ -119,13 +132,13 @@ public class BloodDrainComponent implements Component, ServerTickingComponent, A
               this.holder.getX(),
               this.holder.getY(),
               this.holder.getZ(),
-              BLSounds.DRAIN_BLOOD,
+              SLSounds.DRAIN_BLOOD,
               this.holder.getSoundCategory(),
               1.0f,
               0.9f + this.holder.getRandom().nextFloat() * 0.1f
             );
             VampireComponent.handleBloodDrain(
-              BLEntityComponents.VAMPIRE_COMPONENT.get(this.holder),
+              VampireComponent.KEY.get(this.holder),
               this.target,
               this.holder
             );
@@ -133,7 +146,7 @@ public class BloodDrainComponent implements Component, ServerTickingComponent, A
         }
 
         this.ticksDraining %= this.getTimeToDrain();
-        BLEntityComponents.BLOOD_DRAIN_COMPONENT.sync(this.holder);
+        KEY.sync(this.holder);
     }
 
     @Override
