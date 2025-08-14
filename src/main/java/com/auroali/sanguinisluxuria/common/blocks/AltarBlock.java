@@ -11,6 +11,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.Properties;
@@ -37,11 +38,16 @@ public class AltarBlock extends BlockWithEntity implements Waterloggable {
     ).reduce((v1, v2) -> VoxelShapes.combineAndSimplify(v1, v2, BooleanBiFunction.OR)).get();
 
     public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
+    public static final BooleanProperty TARGET = BooleanProperty.of("target");
     public static final BooleanProperty WATERLOGGED = Properties.WATERLOGGED;
 
     public AltarBlock(Settings settings) {
         super(settings);
-        this.setDefaultState(this.getStateManager().getDefaultState().with(ACTIVE, false).with(WATERLOGGED, false));
+        this.setDefaultState(this.getStateManager().getDefaultState()
+          .with(ACTIVE, false)
+          .with(WATERLOGGED, false)
+          .with(TARGET, false)
+        );
     }
 
     @Override
@@ -63,6 +69,11 @@ public class AltarBlock extends BlockWithEntity implements Waterloggable {
 
         ItemStack stack = player.getStackInHand(hand);
         ItemStack altarStack = altar.getStack(0);
+        if (!stack.isEmpty() && altarStack.isEmpty())
+            this.playInsertSound(player, world);
+        else if (!altarStack.isEmpty())
+            this.playRemoveSound(player, world);
+
         player.setStackInHand(hand, altarStack);
         altar.setStack(0, stack);
 
@@ -105,6 +116,7 @@ public class AltarBlock extends BlockWithEntity implements Waterloggable {
         super.appendProperties(builder);
         builder.add(ACTIVE);
         builder.add(WATERLOGGED);
+        builder.add(TARGET);
     }
 
     @Override
@@ -126,5 +138,27 @@ public class AltarBlock extends BlockWithEntity implements Waterloggable {
         if (state.get(WATERLOGGED))
             world.scheduleFluidTick(pos, Fluids.WATER, Fluids.WATER.getTickRate(world));
         return super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);
+    }
+
+    private void playInsertSound(PlayerEntity player, World world) {
+        world.playSound(
+          player,
+          player.getX(), player.getY(), player.getZ(),
+          SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM,
+          player.getSoundCategory(),
+          1.f,
+          1.f
+        );
+    }
+
+    private void playRemoveSound(PlayerEntity player, World world) {
+        world.playSound(
+          player,
+          player.getX(), player.getY(), player.getZ(),
+          SoundEvents.ENTITY_ITEM_FRAME_REMOVE_ITEM,
+          player.getSoundCategory(),
+          1.f,
+          1.f
+        );
     }
 }

@@ -23,7 +23,7 @@ public class MistAbility extends VampireAbility implements EntitySyncableVampire
     public static final EntityAttributeModifier STEP_HEIGHT_MODIFIER = new EntityAttributeModifier(
       UUID.fromString("7a948f03-6f3c-48a6-a0fc-e72a24d0e9dc"),
       "mist.step_height",
-      0.45d,
+      0.6d,
       EntityAttributeModifier.Operation.ADDITION
     );
     public static final EntityAttributeModifier SPEED_MODIFIER = new EntityAttributeModifier(
@@ -32,11 +32,26 @@ public class MistAbility extends VampireAbility implements EntitySyncableVampire
       0.2d,
       EntityAttributeModifier.Operation.MULTIPLY_BASE
     );
+    public static final EntityAttributeModifier ARMOR_TOUGHNESS_MODIFIER = new EntityAttributeModifier(
+      UUID.fromString("3f9f87bc-eb91-4052-8bf8-3f2c8d2cbb80"),
+      "mist.armor",
+      -1.d,
+      EntityAttributeModifier.Operation.MULTIPLY_TOTAL
+    );
+    public static final EntityAttributeModifier ATTACK_DAMANGE_MODIFIER = new EntityAttributeModifier(
+      UUID.fromString("2ad8aa87-b38e-4eea-85fc-09bbc8e5d271"),
+      "mist.damage",
+      -0.25d,
+      EntityAttributeModifier.Operation.MULTIPLY_TOTAL
+    );
 
     private static final Map<EntityAttribute, EntityAttributeModifier> MODIFIERS = ImmutableMap
       .<EntityAttribute, EntityAttributeModifier>builder()
       .put(StepHeightEntityAttributeMain.STEP_HEIGHT, STEP_HEIGHT_MODIFIER)
       .put(EntityAttributes.GENERIC_MOVEMENT_SPEED, SPEED_MODIFIER)
+      .put(EntityAttributes.GENERIC_ARMOR, ARMOR_TOUGHNESS_MODIFIER)
+      .put(EntityAttributes.GENERIC_ARMOR_TOUGHNESS, ARMOR_TOUGHNESS_MODIFIER)
+      .put(EntityAttributes.GENERIC_ATTACK_DAMAGE, ATTACK_DAMANGE_MODIFIER)
       .build();
 
     @Override
