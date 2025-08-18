@@ -16,6 +16,7 @@ import com.auroali.sanguinisluxuria.common.network.packets.ActivateAbilityC2S;
 import com.auroali.sanguinisluxuria.common.network.packets.DrainBloodC2S;
 import com.auroali.sanguinisluxuria.common.network.packets.FillBloodItemC2S;
 import com.auroali.sanguinisluxuria.common.registry.*;
+import com.auroali.sanguinisluxuria.config.SLClientConfig;
 import dev.emi.trinkets.api.client.TrinketRendererRegistry;
 import ladysnake.satin.api.event.ShaderEffectRenderCallback;
 import net.fabricmc.api.ClientModInitializer;
@@ -72,6 +73,7 @@ public class SanguinisLuxuriaClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        SLClientConfig.INSTANCE.load();
         this.registerBindings();
 
         SLModelLayers.register();
@@ -139,7 +141,7 @@ public class SanguinisLuxuriaClient implements ClientModInitializer {
         });
 
         ShaderEffectRenderCallback.EVENT.register(delta -> {
-            if(VampireHelper.consumesBlood(MinecraftClient.getInstance().player))
+            if (VampireHelper.consumesBlood(MinecraftClient.getInstance().player))
                 this.vampireHungerEffectManager.render(delta);
         });
     }
