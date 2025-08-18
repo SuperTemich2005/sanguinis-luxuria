@@ -7,7 +7,7 @@ import com.auroali.sanguinisluxuria.common.components.VampireComponent;
 import com.auroali.sanguinisluxuria.common.registry.SLDamageSources;
 import com.auroali.sanguinisluxuria.common.registry.SLEntityAttributes;
 import com.auroali.sanguinisluxuria.common.registry.SLItems;
-import com.auroali.sanguinisluxuria.config.BLConfig;
+import com.auroali.sanguinisluxuria.config.SLConfig;
 import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -66,8 +66,8 @@ public class VampireTeleportAbility extends VampireAbility implements SyncableVa
         Box box = new Box(start, end);
         entity.getWorld().getOtherEntities(entity, box, e -> e.isLiving() && e.isAlive())
           .forEach(e -> {
-              if (e.getBoundingBox().intersects(start, end) && e.damage(SLDamageSources.teleport(entity), 8) && entity instanceof PlayerEntity player)
-                  player.addExhaustion(BLConfig.INSTANCE.piercingExhaustion / BLConfig.INSTANCE.vampireExhaustionMultiplier);
+              if (e.getBoundingBox().intersects(start, end) && e.damage(SLDamageSources.piercing(entity), 8) && entity instanceof PlayerEntity player)
+                  player.addExhaustion(SLConfig.INSTANCE.piercingExhaustion / SLConfig.INSTANCE.vampireExhaustionMultiplier);
           });
     }
 
