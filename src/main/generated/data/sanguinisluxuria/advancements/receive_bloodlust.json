@@ -1,5 +1,4 @@
 {
-  "parent": "sanguinisluxuria:blood_sickness",
   "criteria": {
     "status_effect_non_vampire": {
       "conditions": {
@@ -12,6 +11,7 @@
   },
   "display": {
     "announce_to_chat": true,
+    "background": "sanguinisluxuria:textures/block/decayed_planks.png",
     "description": {
       "translate": "advancements.sanguinisluxuria.receive_bloodlust.description"
     },

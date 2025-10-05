@@ -206,6 +206,8 @@ public class SLLangProvider extends FabricLanguageProvider {
         translationBuilder.add(SLBlocks.DECAYED_HANGING_SIGN, "Decayed Hanging Sign");
         translationBuilder.add(SLBlocks.DECAYED_STAIRS, "Decayed Stairs");
         translationBuilder.add(SLBlocks.POTTED_GRAFTED_SAPLING, "Potted Grafted Sapling");
+        translationBuilder.add(SLBlocks.SILVER_BARS, "Silver Bars");
+
         translationBuilder.add("block.sanguinisluxuria.bed.no_sleep", "You can sleep only at day or during thunderstorms");
     }
 
@@ -232,10 +234,6 @@ public class SLLangProvider extends FabricLanguageProvider {
     }
 
     private static void statusEffects(GenericTranslationBuilder.DescriptionTranslationBuilder<StatusEffect> translationBuilder) {
-        translationBuilder.add(SLStatusEffects.BLOOD_SICKNESS,
-          "Blood Sickness",
-          "Gained from drinking blood. High enough levels will convert you to a vampire"
-        );
         translationBuilder.add(SLStatusEffects.BLESSED_WATER,
           "Blessed Water",
           "Damages the undead and grants Blessed Blood to the living"
@@ -255,7 +253,10 @@ public class SLLangProvider extends FabricLanguageProvider {
     }
 
     public static void advancements(GenericTranslationBuilder.DescriptionTranslationBuilder<Identifier> translationBuilder) {
-        translationBuilder.add(SLResources.id("become_vampire"), "Bloodlust", "Transform into a vampire after drinking enough blood");
+        translationBuilder.add(SLResources.id("become_vampire"),
+          "Forever insatiable",
+          "Cling on to life after receiving Bloodlust"
+        );
 
         translationBuilder.add(SLResources.id("drink_twisted_blood"),
           "Consumption",
@@ -263,7 +264,7 @@ public class SLLangProvider extends FabricLanguageProvider {
         );
 
         translationBuilder.add(SLResources.id("blood_sickness"),
-          "Feeling Ill",
+          "Feeling ill",
           "Get blood sickness from drinking blood"
         );
 
@@ -273,12 +274,12 @@ public class SLLangProvider extends FabricLanguageProvider {
         );
 
         translationBuilder.add(SLResources.id("reset_abilities"),
-          "Clean Slate",
+          "Clean slate",
           "Perform the Ritual of Cleansing"
         );
 
         translationBuilder.add(SLResources.id("transfer_effects"),
-          "No Need for Bottles",
+          "No need for bottles",
           "Transfer a potion effect while draining blood"
         );
 
@@ -293,7 +294,7 @@ public class SLLangProvider extends FabricLanguageProvider {
         );
 
         translationBuilder.add(SLResources.id("unbecome_vampire"),
-          "Humanity",
+          "Return to humanity",
           "Perform the Ritual of Purification"
         );
 
@@ -303,7 +304,7 @@ public class SLLangProvider extends FabricLanguageProvider {
         );
 
         translationBuilder.add(SLResources.id("craft_hungry_sapling"),
-          "Grafted Petal",
+          "Never meant to exist",
           "Craft a Grafted Sapling"
         );
 
@@ -313,7 +314,7 @@ public class SLLangProvider extends FabricLanguageProvider {
         );
 
         translationBuilder.add(SLResources.id("obtain_hungry_decayed_log"),
-          "Blood Collector",
+          "Blood collector",
           "Obtain a Hungry Decayed Log"
         );
 
@@ -323,7 +324,7 @@ public class SLLangProvider extends FabricLanguageProvider {
         );
 
         translationBuilder.add(SLResources.id("receive_bloodlust"),
-          "WIP",
+          "A terrible affliction",
           "Receive a thirst for blood"
         );
     }

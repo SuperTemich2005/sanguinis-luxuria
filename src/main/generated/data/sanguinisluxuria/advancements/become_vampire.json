@@ -1,4 +1,5 @@
 {
+  "parent": "sanguinisluxuria:receive_bloodlust",
   "criteria": {
     "convert": {
       "conditions": {
@@ -9,7 +10,6 @@
   },
   "display": {
     "announce_to_chat": true,
-    "background": "minecraft:textures/block/redstone_block.png",
     "description": {
       "translate": "advancements.sanguinisluxuria.become_vampire.description"
     },

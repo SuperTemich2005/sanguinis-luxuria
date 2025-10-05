@@ -9,6 +9,7 @@ import com.auroali.sanguinisluxuria.common.registry.*;
 import com.auroali.sanguinisluxuria.common.rituals.ActiveRitualData;
 import com.auroali.sanguinisluxuria.common.rituals.Ritual;
 import com.auroali.sanguinisluxuria.common.rituals.RitualParameters;
+import com.auroali.sanguinisluxuria.common.rituals.RitualUtil;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.advancement.criterion.Criteria;
@@ -29,15 +30,16 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisplayingBlockEntity {
     private static final Vec3d ITEM_OFFSET = new Vec3d(0.5, 0.45, 0.5);
@@ -65,6 +67,7 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
         if (nbt.containsUuid("StoredTarget"))
             this.storedTarget = nbt.getUuid("StoredTarget");
         this.ritualData = ActiveRitualData.readNbt(nbt);
+        this.ticksProcessing = nbt.getInt("TicksProcessing");
     }
 
     @Override
@@ -75,6 +78,7 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
         if (this.storedTarget != null)
             nbt.putUuid("StoredTarget", this.storedTarget);
         ActiveRitualData.writeNbt(nbt, this.ritualData);
+        nbt.putInt("TicksProcessing", this.ticksProcessing);
     }
 
     public static void tickClient(World world, BlockPos pos, BlockState state, AltarBlockEntity altar) {
@@ -92,6 +96,7 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
         if (!VampireHelper.isVampire(initiator) || target == null) {
             altar.ritualData = null;
             altar.ticksProcessing = 0;
+            world.setBlockState(pos, state.with(AltarBlock.ACTIVE, false).with(AltarBlock.TARGET, false));
             altar.markDirty();
             return;
         }
@@ -111,8 +116,9 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
             );
         }
 
-        if (altar.ticksProcessing < 300) {
+        if (altar.ticksProcessing < ActiveRitualData.TIME_TO_COMPLETE) {
             altar.ticksProcessing++;
+            altar.markDirty();
             return;
         }
 
@@ -143,17 +149,13 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
         List<BlockPos> pedestalPositions = new ArrayList<>();
         List<ItemStack> pedestalItems = new ArrayList<>();
 
-        BlockPos.streamOutwards(pos, PEDESTAL_SEARCH_RADIUS, PEDESTAL_SEARCH_RADIUS, PEDESTAL_SEARCH_RADIUS)
-          .map(position -> world.getBlockEntity(position, SLBlockEntities.PEDESTAL))
-          .filter(Optional::isPresent)
-          .map(Optional::get)
-          .forEach(pedestal -> {
-              if (pedestal.getItem().isEmpty())
-                  return;
+        this.forEachPedestalAround(world, pos, pedestal -> {
+            if (pedestal.getItem().isEmpty())
+                return;
 
-              pedestalPositions.add(pedestal.getPos());
-              pedestalItems.add(pedestal.getItem().copy());
-          });
+            pedestalPositions.add(pedestal.getPos());
+            pedestalItems.add(pedestal.getItem().copy());
+        });
 
         SimpleInventory inventory = new SimpleInventory(pedestalItems.size() + 1);
         inventory.setStack(0, this.getStack(0));
@@ -186,6 +188,7 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
                       world.spawnEntity(itemEntity);
                   }
                   entity.getInventory().markDirty();
+                  RitualUtil.spawnItemConsumedParticlesAt(world, position);
               });
 
               this.ticksProcessing = 0;
@@ -196,11 +199,34 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
                 storedTargetAlive ? this.storedTarget : initiator.getUuid()
               );
               world.setBlockState(pos, state.with(AltarBlock.ACTIVE, true).with(AltarBlock.TARGET, storedTargetAlive));
+
               if (initiator instanceof ServerPlayerEntity player) {
                   Criteria.RECIPE_CRAFTED.trigger(player, recipe.getId(), inventory.stacks);
               }
-              this.markDirty();
+              this.clearNextTarget();
           });
+    }
+
+    protected void forEachPedestalAround(World world, BlockPos pos, Consumer<? super PedestalBlockEntity> consumer) {
+        BlockPos min = new BlockPos(pos.getX() - PEDESTAL_SEARCH_RADIUS, pos.getY() - PEDESTAL_SEARCH_RADIUS, pos.getZ() - PEDESTAL_SEARCH_RADIUS);
+        BlockPos max = new BlockPos(pos.getX() + PEDESTAL_SEARCH_RADIUS, pos.getY() + PEDESTAL_SEARCH_RADIUS, pos.getZ() + PEDESTAL_SEARCH_RADIUS);
+        Box bounds = new Box(min, max);
+        int chunkMinX = ChunkSectionPos.getSectionCoord(min.getX());
+        int chunkMaxX = ChunkSectionPos.getSectionCoord(max.getX());
+        int chunkMinZ = ChunkSectionPos.getSectionCoord(min.getZ());
+        int chunkMaxZ = ChunkSectionPos.getSectionCoord(max.getZ());
+
+        for (int x = chunkMinX; x <= chunkMaxX; x++) {
+            for (int z = chunkMinZ; z <= chunkMaxZ; z++) {
+                if (!world.isChunkLoaded(x, z))
+                    continue;
+                WorldChunk chunk = world.getChunk(x, z);
+                chunk.getBlockEntities().forEach((bPos, be) -> {
+                    if (be instanceof PedestalBlockEntity pedestalBlockEntity && bounds.contains(bPos.getX(), bPos.getY(), bPos.getZ()))
+                        consumer.accept(pedestalBlockEntity);
+                });
+            }
+        }
     }
 
     public LivingEntity getInitiator() {
@@ -323,9 +349,19 @@ public class AltarBlockEntity extends BlockEntity implements Inventory, ItemDisp
         }
     }
 
+    public void clearNextTarget() {
+        this.cachedTarget = null;
+        this.storedTarget = null;
+        this.markDirty();
+    }
+
     private boolean isStoredTargetAlive(World world) {
         if (world instanceof ServerWorld serverWorld && this.storedTarget != null)
             return serverWorld.getEntity(this.storedTarget) instanceof LivingEntity living && living.isAlive();
         return false;
+    }
+
+    public int getRecipeTicks() {
+        return this.ticksProcessing;
     }
 }

@@ -15,6 +15,7 @@ import dev.onyxstudios.cca.api.v3.component.sync.AutoSyncedComponent;
 import dev.onyxstudios.cca.api.v3.component.tick.ServerTickingComponent;
 import net.minecraft.entity.EntityInteraction;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -24,6 +25,7 @@ import net.minecraft.world.event.GameEvent;
 
 public interface VampireComponent extends Component, AutoSyncedComponent, ServerTickingComponent {
     ComponentKey<VampireComponent> KEY = ComponentRegistry.getOrCreate(SLResources.VAMPIRE_COMPONENT_ID, VampireComponent.class);
+    int BLOODLUST_TIME = 60;
 
     /**
      * @return if the holding entity is a vampire
@@ -115,7 +117,12 @@ public interface VampireComponent extends Component, AutoSyncedComponent, Server
         if (!VampireHelper.isVampire(target) && target.hasStatusEffect(StatusEffects.WEAKNESS)) {
             if (vampireEntity instanceof ServerPlayerEntity player)
                 SLAdvancementCriterion.INFECT_ENTITY.trigger(player);
-            VampireHelper.incrementBloodSickness(target);
+            StatusEffectInstance instance = target.getStatusEffect(SLStatusEffects.BLOOD_LUST);
+            target.addStatusEffect(new StatusEffectInstance(
+              SLStatusEffects.BLOOD_LUST,
+              instance == null ? BLOODLUST_TIME : instance.getDuration() + BLOODLUST_TIME,
+              0
+            ));
         }
 
         // villagers have a 50% chance to wake up when having their blood drained

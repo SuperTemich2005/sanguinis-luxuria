@@ -9,7 +9,6 @@ import com.auroali.sanguinisluxuria.common.registry.SLStatusEffects;
 import com.auroali.sanguinisluxuria.common.registry.SLTags;
 import com.auroali.sanguinisluxuria.common.registry.SLVampireAbilities;
 import com.auroali.sanguinisluxuria.common.rituals.types.*;
-import com.auroali.sanguinisluxuria.datagen.builders.BloodCauldronFillRecipeJsonBuilder;
 import com.auroali.sanguinisluxuria.datagen.builders.BloodCauldronRecipeJsonBuilder;
 import com.auroali.sanguinisluxuria.datagen.builders.RitualRecipeJsonBuilder;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
@@ -19,6 +18,7 @@ import net.minecraft.data.server.recipe.*;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.item.WrittenBookItem;
 import net.minecraft.potion.PotionUtil;
 import net.minecraft.potion.Potions;
 import net.minecraft.recipe.Ingredient;
@@ -167,14 +167,14 @@ public class SLRecipeProvider extends FabricRecipeProvider {
           .criterion("become_vampire", ConvertCriterion.Conditions.create(ConversionContext.Conversion.CONVERTING))
           .criterion("has_blood", conditionsFromItem(SLItems.BLOOD_BOTTLE))
           .offerTo(exporter);
-        BloodCauldronFillRecipeJsonBuilder.create(RecipeCategory.BREWING, Ingredient.ofItems(Items.GLASS_BOTTLE), SLItems.BLOOD_BOTTLE)
+        BloodCauldronRecipeJsonBuilder.createFilling(RecipeCategory.BREWING, Ingredient.ofItems(Items.GLASS_BOTTLE), SLItems.BLOOD_BOTTLE)
           .criterion("has_blood", conditionsFromItem(SLItems.BLOOD_BOTTLE))
           .criterion("has_item", conditionsFromItem(SLItems.BLOOD_BOTTLE))
-          .offerTo(exporter);
-        BloodCauldronFillRecipeJsonBuilder.create(RecipeCategory.BREWING, SLItems.BLOOD_BAG)
+          .offerTo(exporter, "filling/blood_bottle");
+        BloodCauldronRecipeJsonBuilder.createFilling(RecipeCategory.BREWING, SLItems.BLOOD_BAG)
           .criterion("has_item", conditionsFromItem(SLItems.BLOOD_BAG))
           .criterion("has_blood", conditionsFromItem(SLItems.BLOOD_BOTTLE))
-          .offerTo(exporter);
+          .offerTo(exporter, "filling/blood_bag");
         BloodCauldronRecipeJsonBuilder.create(RecipeCategory.BREWING, Ingredient.ofItems(Items.GUNPOWDER), Items.REDSTONE)
           .criterion(hasItem(Items.GUNPOWDER), conditionsFromItem(Items.GUNPOWDER))
           .criterion("has_blood", conditionsFromItem(SLItems.BLOOD_BOTTLE))
@@ -185,6 +185,10 @@ public class SLRecipeProvider extends FabricRecipeProvider {
           .offerTo(exporter);
         BloodCauldronRecipeJsonBuilder.create(RecipeCategory.BREWING, Ingredient.ofItems(Items.SPIDER_EYE), Items.FERMENTED_SPIDER_EYE)
           .criterion("has_item", conditionsFromItem(Items.SPIDER_EYE))
+          .criterion("has_blood", conditionsFromItem(SLItems.BLOOD_BOTTLE))
+          .offerTo(exporter);
+        BloodCauldronRecipeJsonBuilder.createCopying(RecipeCategory.BREWING, Ingredient.ofItems(Items.WRITTEN_BOOK), Items.WRITABLE_BOOK, WrittenBookItem.PAGES_KEY)
+          .criterion("has_item", conditionsFromItem(Items.WRITTEN_BOOK))
           .criterion("has_blood", conditionsFromItem(SLItems.BLOOD_BOTTLE))
           .offerTo(exporter);
     }
@@ -245,14 +249,18 @@ public class SLRecipeProvider extends FabricRecipeProvider {
           .offerTo(exporter, SLResources.id("rituals/mist"));
         RitualRecipeJsonBuilder.create(RecipeCategory.MISC, new VampireAbilityRitual(SLVampireAbilities.RESILIENCE))
           .catalyst(SLItems.TWISTED_BLOOD)
-          .input(Items.OBSIDIAN)
-          .input(Items.OBSIDIAN)
+          .input(Items.LEATHER)
+          .input(Items.MAGMA_CREAM)
+          .input(Items.LEATHER)
+          .input(Items.GOLDEN_APPLE)
           .criterion("has_twisted_blood", conditionsFromItem(SLItems.TWISTED_BLOOD))
           .offerTo(exporter, SLResources.id("rituals/resilience"));
         RitualRecipeJsonBuilder.create(RecipeCategory.MISC, new VampireAbilityRitual(SLVampireAbilities.VULNERABILITY))
           .catalyst(SLItems.TWISTED_BLOOD)
           .input(Items.GLASS_PANE)
+          .input(Items.BLAZE_POWDER)
           .input(Items.GLASS_PANE)
+          .input(Items.FERMENTED_SPIDER_EYE)
           .criterion("has_twisted_blood", conditionsFromItem(SLItems.TWISTED_BLOOD))
           .offerTo(exporter, SLResources.id("rituals/vulnerability"));
 
@@ -260,6 +268,7 @@ public class SLRecipeProvider extends FabricRecipeProvider {
           .catalyst(PotionUtil.setPotion(new ItemStack(Items.POTION), SLStatusEffects.BLESSED_WATER_POTION))
           .input(Items.SUNFLOWER)
           .input(Items.SUNFLOWER)
+          .input(SLItems.TWISTED_BLOOD)
           .criterion("unlocked_ability", UnlockAbilityCriterion.Conditions.create())
           .offerTo(exporter, SLResources.id("rituals/reset_abilities"));
 

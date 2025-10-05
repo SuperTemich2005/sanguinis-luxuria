@@ -5,7 +5,6 @@ import com.auroali.sanguinisluxuria.common.blockentities.PedestalBlockEntity;
 import com.auroali.sanguinisluxuria.common.commands.BloodlustCommand;
 import com.auroali.sanguinisluxuria.common.commands.arguments.ConversionArgument;
 import com.auroali.sanguinisluxuria.common.commands.arguments.VampireAbilityArgument;
-import com.auroali.sanguinisluxuria.common.components.BloodComponent;
 import com.auroali.sanguinisluxuria.common.components.VampireComponent;
 import com.auroali.sanguinisluxuria.common.events.BloodStorageFillEvents;
 import com.auroali.sanguinisluxuria.common.items.BloodStorageItem;
@@ -18,7 +17,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -31,22 +29,12 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.base.EmptyItemFluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.InventoryStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.LeveledCauldronBlock;
 import net.minecraft.command.argument.serialize.ConstantArgumentSerializer;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.item.AutomaticItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.village.VillagerProfession;
-import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +95,6 @@ public class SanguinisLuxuria implements ModInitializer {
             }
         });
 
-        ServerLivingEntityEvents.AFTER_DEATH.register(SanguinisLuxuria::dropBlood);
 
         // run the sleep event after other mods, to allow things like
         // spectrum's somnolence effect to allow sleep during night
@@ -158,46 +145,5 @@ public class SanguinisLuxuria implements ModInitializer {
         FluidVariantAttributes.register(SLFluids.BLOOD, SLFluids.BLOOD_ATTRIBUTE_HANDLER);
 
         UseBlockCallback.EVENT.register(EntityTrackingItem::setAltarTarget);
-    }
-
-    private static void dropBlood(LivingEntity entity, DamageSource source) {
-        float dropChance = entity.hasStatusEffect(SLStatusEffects.BLEEDING) ? 0.7f : 0.5f;
-        if (!VampireHelper.isVampire(entity)
-          && VampireHelper.hasBlood(entity)
-          && (entity.getType().isIn(SLTags.Entities.CAN_DROP_BLOOD) || entity.hasStatusEffect(SLStatusEffects.BLEEDING))
-        ) {
-            // only drop blood dropChance% of the time
-            if (entity.getRandom().nextFloat() >= dropChance) {
-                return;
-            }
-            BloodComponent blood = BloodComponent.KEY.get(entity);
-            if (blood.getBlood() < blood.getMaxBlood())
-                return;
-
-            BlockState state = entity.getWorld().getBlockState(entity.getBlockPos());
-            BlockState belowState = entity.getWorld().getBlockState(entity.getBlockPos().down());
-            if (tryFillCauldron(entity.getWorld(), entity.getBlockPos(), state) || tryFillCauldron(entity.getWorld(), entity.getBlockPos().down(), belowState))
-                return;
-
-            BlockState newState = SLBlocks.BLOOD_SPLATTER.getDefaultState();
-            if (!state.canReplace(new AutomaticItemPlacementContext(entity.getWorld(), entity.getBlockPos(), Direction.DOWN, ItemStack.EMPTY, Direction.UP)) || !newState.canPlaceAt(entity.getWorld(), entity.getBlockPos()))
-                return;
-
-            entity.getWorld().setBlockState(entity.getBlockPos(), newState);
-        }
-    }
-
-    private static boolean tryFillCauldron(World world, BlockPos pos, BlockState state) {
-        if (state.isOf(SLBlocks.BLOOD_CAULDRON) && state.get(LeveledCauldronBlock.LEVEL) < LeveledCauldronBlock.MAX_LEVEL) {
-            world.setBlockState(pos, state.with(LeveledCauldronBlock.LEVEL, state.get(LeveledCauldronBlock.LEVEL) + 1));
-            world.playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.ITEM_BUCKET_EMPTY, SoundCategory.BLOCKS, 1.0f, 1.0f);
-            return true;
-        }
-        if (state.isOf(Blocks.CAULDRON)) {
-            world.setBlockState(pos, SLBlocks.BLOOD_CAULDRON.getDefaultState());
-            world.playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.ITEM_BUCKET_EMPTY, SoundCategory.BLOCKS, 1.0f, 1.0f);
-            return true;
-        }
-        return false;
     }
 }

@@ -14,6 +14,7 @@ public record ActiveRitualData(Ritual ritual, UUID initiator, UUID target) {
     public static final String RITUAL_KEY = "ritual";
     public static final String INITIATOR_KEY = "initiator";
     public static final String TARGET_KEY = "target";
+    public static final int TIME_TO_COMPLETE = 300;
 
     public static void writeNbt(NbtCompound compound, ActiveRitualData data) {
         if (data == null)
@@ -21,9 +22,9 @@ public record ActiveRitualData(Ritual ritual, UUID initiator, UUID target) {
         Ritual.RITUAL_CODEC.encodeStart(NbtOps.INSTANCE, data.ritual())
           .resultOrPartial(SanguinisLuxuria.LOGGER::error)
           .ifPresent(element -> {
-              compound.putUuid(RITUAL_KEY, data.initiator);
-              compound.putUuid(INITIATOR_KEY, data.target);
-              compound.put(TARGET_KEY, element);
+              compound.putUuid(INITIATOR_KEY, data.initiator);
+              compound.putUuid(TARGET_KEY, data.target);
+              compound.put(RITUAL_KEY, element);
           });
     }
 
